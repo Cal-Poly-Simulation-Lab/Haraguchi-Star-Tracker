@@ -2,12 +2,12 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 
-# converts hours to rad for use in ra calcs
-def hours2rad(hr, min, sec):
-    hr += (min / 60)
-    hr += (sec / 3600)
-    rad = hr * 15 * np.pi / 180 # verify this math that it's ok Johan says it is
-    return rad
+# # converts hours to rad for use in ra calcs
+# def hours2rad(hr, min, sec):
+#     hr += (min / 60)
+#     hr += (sec / 3600)
+#     rad = hr * 15 * np.pi / 180 # verify this math that it's ok Johan says it is
+#     return rad
 
 # converts deg min to rad for use in dec calcs
 def degmin2rad(deg, min, sec, dir):
