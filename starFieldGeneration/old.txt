@@ -1,0 +1,73 @@
+    # result = Vizier.query_region(coord.SkyCoord(ra=alpha, dec=delta, unit=(units.deg, units.deg), frame='icrs'), height=str(FOVh) + "deg", width=str(FOVv) + "deg", catalog='GSC')
+
+    # table = result[0] 
+    # print(table)
+
+    # ra = table[2][:] # what column is what might not be constant??? 
+    # dec = table[3][:]
+    # print(ra)
+    # print(dec)
+    # mag = table[5][:]
+
+        # search_string = "sbsc -hn " + str(num_stars) + " -r -7200 " + ra + " " + dec + " J2000"
+    # print(search_string)
+    # input into command line stuff 
+    # subprocess.run(search_string)
+
+    # in real life this would be read in and parsed appropriately
+    # catalog_output = np.array([["10:01:00.700", "+31:55:25.00", "5.36"], 
+    #                            ["09:59:36.200", "+29:38:43.00", "5.73"], 
+    #                            ["10:08:15.900", "+31:36:15.00", "6.24"]])
+    
+    # # number of stars returned in image may be less than requested 
+    # num_stars = np.shape(catalog_output)[1]
+
+
+
+    # convert star unit vectors ECI -> camera frame 
+    # u_star_camera = np.zeros([num_stars, 3])
+    # for i in range(num_stars):
+    #     u_star_camera[i,:] = np.matmul(C_camECI, u_star[i,:])
+
+    # find locations of stars on image plane
+    # uv_star = np.zeros([num_stars, 2])
+    # for i in range(num_stars):
+    #     uv_star[i,0] = 
+
+    # im_arr = np.zeros([r, c], dtype = np.uint8)
+
+# really need to check the math on this - declination is proably already in degrees
+# def hours2rad(hrs_str):
+#     """Converts ra or dec string to equivalent value in radians
+    
+#     Parameters
+#     ----------
+#     hrs_str : str
+#         Angular value in HH:MM:SS as output from star catalog
+
+#     Returns
+#     -------
+#     rad : double
+#         Angular value in radians 
+#     """
+
+#     neg = False
+#     if hrs_str[0] == '+':
+#         hrs_str = hrs_str[1:]
+#     if hrs_str[0] == '-':
+#         hrs_str = hrs_str[1:]
+#         neg = True
+#     hours = float(hrs_str[:2])
+#     minutes = float(hrs_str[3:5])
+#     sec = float(hrs_str[6:])
+#     rad = hours * 15 * np.pi / 180
+#     rad += minutes / 60 * np.pi / 180
+#     rad += sec / 60 / 60 * np.pi / 180
+#     if neg:
+#         rad *= -1
+#     return rad
+
+# rot = np.array([[1, 0, 0], 
+                # [0, 1, 0],
+                # [0, 0, 1]])
+# static_image("10:00:00", "+30:00:00", 4, 10, 480, 480, rot)
