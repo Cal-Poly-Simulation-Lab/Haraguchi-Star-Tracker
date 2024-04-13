@@ -1,6 +1,8 @@
 import cv2 as cv
 import numpy as np
 
+# not doing it this way at all 
+
 def featureId(img):
     # initialize FAST object with threshold value 
     fast = cv.FastFeatureDetector_create(threshold=100)

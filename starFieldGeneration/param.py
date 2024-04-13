@@ -13,10 +13,12 @@ w = 1024 # pixels, screen width
 h_cm = 12 # cm, image height on screen
 l = 5 * 2.54 # cm, separation between camera and screen
 f = h / h_cm * l # pixels, system focal length
+minMag = 4.4377 # minimum star magnitude displayable by screen
+maxMag = -1.5829 # maximum displayable magnitude 
 
 # image generation parameters
-num_stars = 50 # number of stars to include in image 
+num_stars = 50 # number of stars to include in image - don't think I want to have this actually 
 
 # catalog parameters
-path = "bs5_brief.csv" # path to catalog from where code will be run
-num_entries = 9096 # number of entries in specific catalog 
+catalogPath = "bs5_brief.csv" # path to catalog from where code will be run
+dataPath = "star_generation_data.csv" # path to csv file generated from catalog

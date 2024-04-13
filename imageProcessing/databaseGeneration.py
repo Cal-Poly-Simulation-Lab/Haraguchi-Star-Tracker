@@ -2,15 +2,172 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 
-# # converts hours to rad for use in ra calcs
-# def hours2rad(hr, min, sec):
-#     hr += (min / 60)
-#     hr += (sec / 3600)
-#     rad = hr * 15 * np.pi / 180 # verify this math that it's ok Johan says it is
-#     return rad
+# change so these aren't named the same thing 
+def parseCatalog(path, minMag, maxMag):
+    """
+    Parse bs5_brief.csv file for use in star identification and saves as csv file 
 
-# converts deg min to rad for use in dec calcs
+    Parameters
+    ----------
+    path : str
+        Path to bs5_brief.csv file location
+    minMag : float
+        Minimum star magnitude displayable by screen
+    maxMag : float
+        Maximum star magnitude displayable by screen
+    """
+
+    # read in file at path as pandas dataframe
+    catalogDF = pd.read_csv(path)
+    # drop columns other than ra, dec, and vmag
+    catalogDF.drop(catalogDF.columns[[0,1,2,3,4,5,14,15,16,17,18,19,20]], axis=1, inplace = True) # 0 is hr star number, might want to keep it
+    # delete rows that contain a null
+    catalogDF.dropna(inplace=True)
+    # filter by displayable magnitude
+    catalogDF.drop(catalogDF[catalogDF.Vmag > minMag].index, inplace=True)
+    catalogDF.drop(catalogDF[catalogDF.Vmag < maxMag].index, inplace=True)
+    # sort by magnitude in descending order (negative is high magnitude so techinally in ascending)
+    catalogDF.sort_values(by=['Vmag'], inplace=True)
+
+    numEntries = len(catalogDF)
+    v_arr = np.empty([numEntries,3]) # ra, dec, v
+
+    for i in range(numEntries):
+        ra = hours2rad(catalogDF.iat[i,0], catalogDF.iat[i,1], catalogDF.iat[i,2])
+        dec = degmin2rad(catalogDF.iat[i,4], catalogDF.iat[i,5], catalogDF.iat[i,6], catalogDF.iat[i,3])
+        v_arr[i] = radec2v(ra, dec)
+
+    # save as csv file
+    data = pd.DataFrame(v_arr, columns=['x', 'y', 'z'])
+    data.to_csv('v_unit_vectors.csv', index=False)
+    
+    return
+
+# based on K-vector paper 
+def K_vector(path):
+    """
+    Creates K-Vector 
+    """
+    v_array = pd.read_csv(path)
+    v = v_array.to_numpy()
+
+    cosTheta = np.cos(75 * np.pi / 180) # cos thetaFOV for visibility condition 
+    numEntries = len(v)
+    # m = numEntries * numEntries - numEntries # number of admissible star pairs - m is actually the number that fit the criteria
+    P = [] # P, I, J
+    m = 0
+    for i in range(numEntries):
+        for j in range(numEntries):
+            if i != j:
+                dot = np.dot(v[i], v[j])
+                if dot >= cosTheta:
+                    P.append([dot, i, j])
+                    m += 1
+    P = np.array(P) # convert to numpy array
+    print("P =")
+    print(P)
+
+    # sort P to get S 
+    S = P[P[:,0].argsort()] # S, I, J
+    print("S =")
+    print(S)
+
+    plt.plot(S[:,0], linestyle='None', marker='.')
+    plt.xlabel("progressive index")
+    plt.ylabel("S-vector")
+    plt.grid(True)
+
+    # shifted best fit line
+    D = (S[m-1][0] - S[0][0]) / (m - 1)
+    a1 = m * D / (m - 1)
+    a0 = S[0][0] - a1 - (D / 2)
+
+    # # build K-vector
+    S_only = S[:,0]
+    print(S_only)
+    K = np.zeros([m,1]) # <---- really need to verify this, why are they only even? 
+    K[-1] = m # set last element to m 
+    for k in range(1,m-1): # K(0) = 0 so can start at 1 (check -1 instead of -2)
+        val = a1 * k + a0
+        # print("val = " + str(val))
+        # idx_less = np.where(S_only <= val)
+        # print("idx = " + str(idx_less))
+        idx_greater = np.where(S_only > val)
+        # print(idx_less[0])
+        # # print("more = " + str(idx_greater))
+        K[k] = idx_greater[0][0]
+        # need to think about what to do here 
+
+    plt.plot(K, S_only, linestyle='None', marker=',')
+    plt.xlabel("K-vector")
+    plt.ylabel("S-vector")
+    plt.grid(True)
+
+    # plot cosTheta line 
+
+    print("K = ")
+    print(K)
+    print("SIJ = ")
+    print(S)
+    KSIJ = np.concatenate((K,S), axis=1)
+    print(KSIJ)
+
+    # convert K, S, I, J to csv
+    data = pd.DataFrame(KSIJ, columns=['K', 'S', 'I', 'J'])
+    data.to_csv('KSIJ_arrays.csv', index=False)
+
+    plt.show()
+
+    return
+
+def cosTheta(a0, a1, k):
+    return a1 * k + a0
+
+# should these functions be only in one file? 
+def hours2rad(hr, min, sec):
+    """
+    Converts right ascension hours, minutes, seconds to radians
+    
+    Parameters
+    ----------
+    hr : float
+        RA hours
+    min : float
+        RA minutes
+    sec : float
+        RA seconds
+
+    Returns
+    -------
+    rad : float
+        RA angular value in radians 
+    """
+
+    hr += (min / 60)
+    hr += (sec / 3600)
+    rad = hr * 15 * np.pi / 180 # verify this math that it's ok Johan says it is
+    return rad
+
 def degmin2rad(deg, min, sec, dir):
+    """
+    Converts declination degrees, minutes, seconds to radians
+
+    Parameters
+    ----------
+    deg : float
+        DEC degrees
+    min : float
+        DEC minutes
+    sec : float
+        DEC seconds
+    dir : str
+        DEC direction, N or S
+
+    Returns
+    -------
+    rad : float
+        DEC angular value in radians
+    """
     deg += (min / 60)
     deg += (sec / 3600)
     rad = deg * np.pi / 180
@@ -24,74 +181,25 @@ def degmin2rad(deg, min, sec, dir):
 # converts ra and dec to unit vector in celestial sphere 
 # from star id pg 6 
 def radec2v(ra, dec):
+    """
+    Converts right ascension and declination to unit vector in celestial sphere
+
+    Parameters
+    ----------
+    ra : float
+        Right ascension in rad
+    dec : float
+        Declination in rad
+
+    Returns
+    -------
+    v : list
+        [x, y, z] unit vector 
+    """
+
     x = np.cos(ra) * np.cos(dec)
     y = np.sin(ra) * np.cos(dec)
     z = np.sin(dec)
     norm = np.sqrt(x**2 + y**2 + z**2)
-    v = [x[0]/norm[0], y[0]/norm[0], z[0]/norm[0]] # see if there's a better way to do this 
+    v = [x, y, z] / norm
     return v
-
-# read in csv file as pandas dataframe
-catalogDF = pd.read_csv('bs5_brief.csv')
-print(catalogDF.info())
-
-# drop columns that are not relevant
-catalogDF.drop(catalogDF.columns[[1,2,3,4,5,14,15,16,17,18,19,20]], axis=1, inplace = True)
-print(catalogDF.info())
-
-# delete rows where one of the data rows is null
-catalogDF.dropna(inplace = True)
-print(catalogDF.info())
-
-# filter out rows with magnitudes not detectable 
-# preliminary calcs, can detect magnitudes -1.5829 to 4.4377
-catalogDF.drop(catalogDF[catalogDF.Vmag > 4.4377].index, inplace=True)
-
-# convert columns to numpy arrays
-catalog = catalogDF.to_numpy()
-
-numEntries = len(catalogDF)
-print(catalogDF)
-
-# store caclulated data 
-ra = np.empty([numEntries,1])
-dec = np.empty([numEntries,1])
-v = np.empty([numEntries,3])
-
-for i in range(numEntries):
-    ra[i] = hours2rad(catalog[i][1], catalog[i][2], catalog[i][3])
-    dec[i] = degmin2rad(catalog[i][5], catalog[i][6], catalog[i][7], catalog[i][4])
-    v[i] = radec2v(ra[i], dec[i])
-
-# from k-vector paper 
-
-cosTheta = np.cos(75 * np.pi / 180) # cos thetaFOV for visibility condition 
-
-m = numEntries * numEntries - numEntries # number of admissible star pairs 
-# P = np.empty([m,3]) # columns are P, I, J, respectively 
-P = []
-count = 0
-for i in range(numEntries):
-    for j in range(numEntries):
-        if i != j:
-            dot = np.dot(v[i], v[j])
-            if dot >= cosTheta:
-                P.append([dot, i, j])
-                # P[count,0] = dot
-                # P[count,1] = i
-                # P[count,2] = j
-                count += 1
-P = np.array(P)
-print("P =")
-print(P)
-
-# sort P to get S 
-S = P[P[:,0].argsort()]
-print("S =")
-print(S)
-
-plt.plot(S[:,0], linestyle='None' ,marker=',')
-plt.xlabel("progressive index")
-plt.ylabel("S-vector")
-plt.grid(True)
-plt.show()

@@ -1,28 +1,37 @@
 import cv2 as cv
 import featureExtraction as fe
+import databaseGeneration as dg
+
+catalogPath = "bs5_brief.csv"
+minMag = 4.4377
+maxMag = -1.5829
+vPath = "v_unit_vectors.csv"
+
+# only happens once or if parameters have changed
+# dg.parseCatalog(catalogPath, minMag, maxMag) # parse catalog to get unit vectors
+# dg.K_vector(vPath) # compute K-vector - then can read in vectors from csv file later  
+
 
 # read image in grayscale
-img = cv.imread("sampleStellarium.png", cv.IMREAD_GRAYSCALE)
+img = cv.imread("test_images\Pleiades.jpg", cv.IMREAD_GRAYSCALE)
 
 # threshold
-fe.detectionAndCentroiding(img, 3, 100)
+fe.detectionAndCentroiding(img, 500, 2000)
 
-'''
-tikzplotlib (formerly matplotlib2tikz) creates LaTeX code using the pgfplots package. It's available on Pypi, so it can be installed with pip.
+# tikzplotlib (formerly matplotlib2tikz) creates LaTeX code using the pgfplots package. It's available on Pypi, so it can be installed with pip.
 
-Basically do
+# Basically do
 
-import tikzplotlib
-and then
+# import tikzplotlib
+# and then
 
-tikzplotlib.save('filename.tex')
-after generating a figure. In your LaTeX-file add
+# tikzplotlib.save('filename.tex')
+# after generating a figure. In your LaTeX-file add
 
-\usepackage{pgfplots}
-to the preamble, and
+# \usepackage{pgfplots}
+# to the preamble, and
 
-\input{filename}
-to add the figure.
+# \input{filename}
+# to add the figure.
 
-The tikzplotlib.save function has multiple options for modifying the code, so have a look at its docstring.
-'''
+# The tikzplotlib.save function has multiple options for modifying the code, so have a look at its docstring.

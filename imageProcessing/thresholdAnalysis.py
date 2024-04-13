@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 # read in image that will be used to test different threshold values
-img = cv.imread("sampleStellarium.png", cv.IMREAD_GRAYSCALE)
+img = cv.imread("test_images\Pleiades.jpg", cv.IMREAD_GRAYSCALE)
 
 # different intensity characteristics
 meanIntensity = np.mean(img)
@@ -18,8 +18,12 @@ img_blurred = cv.GaussianBlur(img, (3,3), 0)
 meanBlurred = np.mean(img_blurred)
 ret,blurThresh = cv.threshold(img_blurred, meanBlurred, 255, cv.THRESH_BINARY)
 
-titles = ['Original', 'Mean', 'Stddev below Mean', 'Blurred Mean']
-images = [img, meanThresh, stddevThresh, blurThresh]
+# apply median threshold to remove salt and pepper noise
+img_median = cv.medianBlur(img,9)
+ret, medianThresh = cv.threshold(img_median, meanIntensity, 255, cv.THRESH_BINARY)
+
+titles = ['Original', 'Mean', 'Blurred Mean', 'Blurred Median']
+images = [img, meanThresh, blurThresh, medianThresh]
 
 for i in range(4):
     plt.subplot(2,2,i+1)

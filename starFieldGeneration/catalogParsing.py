@@ -1,85 +1,97 @@
-import csv
 import numpy as np
-from timeit import default_timer
+import pandas as pd
 
-def parseCatalog(path, num_entries):
+def parseCatalog(path, minMag, maxMag):
+    """
+    Parses bs5_brief.csv file for use in image generation and saves as csv file
 
-    data_arr = np.empty([num_entries, 3]) # create empty array to hold catalog data 
-    count = 0 # for use in indexing into array 
+    Parameters
+    ----------
+    path : str
+        Path to bs5_brief.csv file location
+    minMag : float
+        Minimum star magnitude displayable by screen
+    maxMag : float
+        Maximum star magnitude displayable by screen
+    """
 
-    with open(path, mode='r') as file: # open file at provided path in read mode 
-        csvFile = csv.DictReader(file) # reading as dictionary makes file headers dict keys
-       
-        for lines in csvFile: # iterate through each line
+    # read in file at path as pandas dataframe
+    catalogDF = pd.read_csv(path)
+    # drop columns other than ra, dec, and vmag
+    catalogDF.drop(catalogDF.columns[[0,1,2,3,4,5,14,15,16,17,18,19,20]], axis=1, inplace = True) # 0 is hr star number, might want to keep it
+    # delete rows that contain a null
+    catalogDF.dropna(inplace=True)
+    # filter by displayable magnitude
+    catalogDF.drop(catalogDF[catalogDF.Vmag > minMag].index, inplace=True)
+    catalogDF.drop(catalogDF[catalogDF.Vmag < maxMag].index, inplace=True)
+    # sort by magnitude in descending order (negative is high magnitude so techinally in ascending)
+    catalogDF.sort_values(by=['Vmag'], inplace=True)
 
-            # read in RA values and convert to rad 
-            data_arr[count, 0] = hours2rad(lines.get("RA"), lines.get("m"), lines.get("s"))
-            
-            # read in DEC values and convert to rad with proper sign 
-            udec = minsec2rad(lines.get("Dec deg"), lines.get("Dec m"), lines.get("Dec s"))
-            if lines.get("Dec dir") == "N":
-                data_arr[count, 1] = udec
-            elif lines.get("Dec dir") == "S":
-                data_arr[count, 1] = -1 * udec
-            else:
-                raise Exception("Declination direction not specified")
-            
-            # read in visual magnitude values
-            data_arr[count, 2] = float(lines.get("Vmag"))
-            count += 1 # increment counter
+    numEntries = len(catalogDF)
 
-    # sort contents of data_arr by mag column values in descending order (negative means high magnitude)
-    data_arr = data_arr[data_arr[:, 2].argsort()]
-    print("highest magnitude = " + str(data_arr[0,2]))
-    print("lowest magnitude = " + str(data_arr[-1,2]))
-    print(data_arr)
-    return data_arr
+    data_arr = np.empty([numEntries,3])
+
+    for i in range(numEntries):
+        data_arr[i][0] = hours2rad(catalogDF.iat[i,0], catalogDF.iat[i,1], catalogDF.iat[i,2])
+        data_arr[i][1] = degmin2rad(catalogDF.iat[i,4], catalogDF.iat[i,5], catalogDF.iat[i,6], catalogDF.iat[i,3])
+        data_arr[i][2] = catalogDF.iat[i,7]
+
+    # save as csv file 
+    data = pd.DataFrame(data_arr, columns=['RA', 'DEC', 'VMAG'])
+    data.to_csv('star_generation_data.csv', index=False)
+
+    return
 
 def hours2rad(hr, min, sec):
-    """Converts ra or dec string to equivalent value in radians
+    """
+    Converts right ascension hours, minutes, seconds to radians
     
     Parameters
     ----------
-    hrs_str : str
-        Angular value in HH:MM:SS as output from star catalog
+    hr : float
+        RA hours
+    min : float
+        RA minutes
+    sec : float
+        RA seconds
 
     Returns
     -------
-    rad : double
-        Angular value in radians 
+    rad : float
+        RA angular value in radians 
     """
 
-    hours = float(hr)
-    minutes = float(min)
-    sec = float(sec)
-    hours += (minutes / 60)
-    hours += (sec / 3600)
-    rad = hours * 15 * np.pi / 180 # verify this math that it's ok Johan says it is
+    hr += (min / 60)
+    hr += (sec / 3600)
+    rad = hr * 15 * np.pi / 180 # verify this math that it's ok Johan says it is
     return rad
 
-def minsec2rad(deg, min, sec):
-    deg = float(deg)
-    min = float(min)
-    sec = float(sec)
+def degmin2rad(deg, min, sec, dir):
+    """
+    Converts declination degrees, minutes, seconds to radians
+
+    Parameters
+    ----------
+    deg : float
+        DEC degrees
+    min : float
+        DEC minutes
+    sec : float
+        DEC seconds
+    dir : str
+        DEC direction, N or S
+
+    Returns
+    -------
+    rad : float
+        DEC angular value in radians
+    """
     deg += (min / 60)
     deg += (sec / 3600)
     rad = deg * np.pi / 180
-    return rad
-
-# ra = np.empty((9096, 1))
-# dec = np.empty((9096,1))
-# mag = np.empty((9096, 1))
-# parseCatalog("bs5_brief.csv", 9096)
-# print(ra)
-# print(dec)
-# print(mag)
-
-# timing stuff I should remove 
-# total = 0
-# for i in range(100):
-#     start = default_timer()
-#     parseCatalog("bs5_brief.csv", 9096)
-#     stop = default_timer()
-#     total += stop - start
-# total = total / 100
-# print(total)
+    if dir == "N":
+        return rad
+    elif dir == "S":
+        return -1 * rad
+    else:
+        raise Exception("invalid declination direction")

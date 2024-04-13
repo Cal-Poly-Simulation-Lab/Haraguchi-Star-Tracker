@@ -1,31 +1,21 @@
 import cv2 as cv
 import numpy as np
+import pandas as pd
 
-def static_image(data_all, q_ECI_b, q_b_st, u_st_st, fov, f, h, w, num_stars): # ra, dec, box, num_stars, r, c, C_camECI):
+def static_image(path, q_ECI_b, q_b_st, u_st_st, fov, f, h, w, num_stars): # ra, dec, box, num_stars, r, c, C_camECI):
     """Generates a star field image in a given location
     
     Parameters
     ----------
-    ra : str
-        Right ascencion of center of image in J2000 coordinates
-        Formatted HH:MM:SS
-    dec : str
-        Decination of center of image in J2000 coordinates
-        Formatted HH:MM:SS
-    box : int
-        Size of box to search for stars in degrees
-    num_stars : int
-        Number of top brightest stars to seach catalog for
-    r : int
-        Pixel rows in the output image
-    c : int
-        Pixel columns in the output image
 
     Returns
     -------
     displays image
     """
 
+    data = pd.read_csv(path)
+    data_all = data.to_numpy()
+    
     # convert st boresight direction to celestial ra and dec 
     u_st_b = rot(u_st_st, q_b_st) # st boresight in body frame
     u_st_ECI = rot(u_st_b, q_ECI_b) # st boresight in ECI
@@ -35,7 +25,7 @@ def static_image(data_all, q_ECI_b, q_b_st, u_st_st, fov, f, h, w, num_stars): #
     # find range of star ra/dec values that will be in view 
     fov = fov * np.pi / 180 # convert fov to rad
 
-    fov_type = "rectangular" # book or rectangular
+    fov_type = "book" # book or rectangular
     if fov_type == "book":
         R = np.sqrt(2 * fov**2) / 2 # radius of circular field of view from star id book 
         ra_min = alpha - R / np.cos(delta) # min/max ra 
@@ -63,7 +53,7 @@ def static_image(data_all, q_ECI_b, q_b_st, u_st_st, fov, f, h, w, num_stars): #
     print("ra min and max %f, %f dec min and max %f, %f" %(ra_min, ra_max, dec_min, dec_max))
     
     # get lists of all stars in view 
-    num_entries = data_all.shape[0] # number of entries in catalog arrays
+    num_entries = len(data_all) # number of entries in catalog arrays
     ra = []
     dec = []
     mag = []
@@ -93,6 +83,8 @@ def static_image(data_all, q_ECI_b, q_b_st, u_st_st, fov, f, h, w, num_stars): #
     img = np.zeros((h,w), np.uint8)
 
     # convert ra,dec -> ECI -> body -> star tracker -> focal plane (u,v)
+    # changed from number of stars user requested to total number of stars in array 
+    num_stars = len(ra)
     stars_added = 0
     for i in range(num_stars):
         rai = ra[i]
@@ -148,10 +140,38 @@ def static_image(data_all, q_ECI_b, q_b_st, u_st_st, fov, f, h, w, num_stars): #
 #     cap.release()
 
 def q_star(q):
+    """
+    Computes the quaternion conjugate q*
+
+    Parameters
+    ----------
+    q : numpy.ndarray
+        Quaternion [epsilon; eta]
+
+    Returns
+    -------
+    q_star : numpy.ndarray
+        Quaternion conjugate [epsilon; eta]
+    """
     q_star = np.array([[-1 * q[0,0]], [-1 * q[1,0]], [-1 * q[2,0]], [q[3,0]]])
     return q_star
 
 def q_mult_cross(p, q):
+    """
+    Computes the cross form of quaternion multiplication
+
+    Parameters
+    ----------
+    p : numpy.ndarray
+        First quaternion
+    q : numpy.ndarray
+        Second quaterion
+
+    Returns
+    -------
+    q_ret : numpy.ndarray
+        Quaternion product 
+    """
     q_ret = np.array([p[0] * q[3] - p[1] * q[2] + p[2] * q[1] + p[3] * q[0],
                       p[0] * q[2] - p[2] * q[0] + p[1] * q[3] + p[3] * q[1],
                       p[1] * q[0] - p[0] * q[1] + p[2] * q[3] + p[3] * q[2],
@@ -159,6 +179,21 @@ def q_mult_cross(p, q):
     return q_ret
 
 def rot(v, q):
+    """
+    Rotates vector v by the quaternion q
+
+    Parameters
+    ----------
+    v : numpy.ndarray
+        Vector
+    q : numpy.ndarray
+        Quaternion
+
+    Returns
+    -------
+    v_rot : numpy.ndarray
+        Rotated vector
+    """
     q_s = q_star(q)
     v_q = np.array([v[0], v[1], v[2], [0]])
     v_rot = q_mult_cross(q_mult_cross(q, v_q), q_s)
@@ -166,6 +201,21 @@ def rot(v, q):
     return v_rot
 
 def r2radec(r):
+    """
+    Converts vector r to right ascension and declination
+
+    Parameters
+    ----------
+    r : numpy.ndarray
+        Vector
+
+    Returns
+    -------
+    ra : float
+        Right ascension
+    dec : float
+        Declination 
+    """
     u = r / np.linalg.norm(r)
     l = u[0]
     m = u[1]
@@ -175,4 +225,3 @@ def r2radec(r):
     if m <= 0:
         ra = 2 * np.pi - ra
     return ra[0], dec[0]
-

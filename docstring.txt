@@ -1,0 +1,15 @@
+"""
+One sentence description of the function
+
+Parameters
+----------
+param1 : type
+    Description of parameter
+param2 : type
+    Description of parameter
+
+Returns
+-------
+return1 : type
+    Description of return value
+"""
