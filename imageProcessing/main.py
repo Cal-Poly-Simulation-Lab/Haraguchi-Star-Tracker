@@ -13,10 +13,13 @@ vPath = "v_unit_vectors.csv"
 
 
 # read image in grayscale
-img = cv.imread("test_images\Pleiades.jpg", cv.IMREAD_GRAYSCALE)
+img = cv.imread("test_images/blurredTest.png", cv.IMREAD_GRAYSCALE)
+
+cv.imshow("img", img)
+cv.waitKey()
 
 # threshold
-fe.detectionAndCentroiding(img, 500, 2000)
+fe.detectionAndCentroiding(img, 0, 100)
 
 # tikzplotlib (formerly matplotlib2tikz) creates LaTeX code using the pgfplots package. It's available on Pypi, so it can be installed with pip.
 

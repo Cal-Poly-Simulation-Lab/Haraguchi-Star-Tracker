@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
-def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, intensityPath):
+def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, maxStars):
     """Generates a star field image in a given location
     
     Parameters
@@ -92,7 +92,7 @@ def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, intensityPath):
     img = np.zeros((h,w), np.uint8)
 
     # convert ra,dec -> ECI -> star tracker -> focal plane (u,v)
-    num_stars = len(ra)
+    num_stars = min(len(ra), maxStars)
     for i in range(num_stars):
         rai = ra[i]
         deci = dec[i]
@@ -102,25 +102,44 @@ def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, intensityPath):
         u_star_st = rot(u_star_ECI, q_star(q_ECI_st))
         u = f * u_star_st[1,0] / u_star_st[0,0] # have this be a condition depending on boresight direction
         v = f * u_star_st[2,0] / u_star_st[0,0] # what did I mean by the above 
-        r = int(round(v) + (h / 2)) # do something with intensity so I'm not rounding and have it on the actual location 
-        c = int(round(u) + (w / 2))
-        if 0 <= r-1 and r+1 < h and 0 <= c-1 and c+1 < w:
-            img[r,c] = inten[i] # * (2.512**(-1 * mag[i])) / (2.512**1.46)
-            img[r,c+1] = inten[i]
-            img[r,c-1] = inten[i]
-            img[r+1,c] = inten[i] 
-            img[r+1,c+1] = inten[i]
-            img[r+1,c-1] = inten[i]
-            img[r-1,c] = inten[i] 
-            img[r-1,c+1] = inten[i]
-            img[r-1,c-1] = inten[i] 
-            print(inten[i])
 
-    cv.imshow("static image", img)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+        starSize = 9
+        border = starSize // 2
+
+        r = v + (h / 2) # unrounded centroids, directly from math in r,c coordinates 
+        c = u + (w / 2)
+
+        print("centroid = " + str(r) + ", " + str(c))
+
+        r_local = (r % 1) + border # local centroids, center of starSize x starSize square 
+        c_local = (c % 1) + border
+        r_floor = int(r // 1) # floored centroids, used for finding center 
+        c_floor = int(c // 1)
+        H = gaussianKernel(starSize, np.array([[r_local],[c_local]]), 1.2)
+        if 0 <= r_floor-border and r_floor+border < h and 0 <= c_floor-border and c_floor+border < w:
+            for i in range(starSize):
+                for j in range(starSize):
+                    if img[r_floor-border+i, c_floor-border+j] + 255 * H[i,j] > 255:
+                        img[r_floor-border+i, c_floor-border+j] = 255
+                    else:
+                        img[r_floor-border+i, c_floor-border+j] += 255 * H[i,j]
 
     return img
+
+def gauss2D(sigma, mean, x):
+    Sigma = np.array([[sigma**2, 0], [0, sigma**2]])
+    t1 = 1 / (2 * np.pi * np.sqrt(np.linalg.det(Sigma)))
+    arg = -0.5 * np.matmul(np.matmul((x - mean).T, np.linalg.inv(Sigma)), (x - mean))
+    p = t1 * np.exp(arg)
+    return p[0][0]
+
+def gaussianKernel(size, mean, sigma):
+    H = np.empty((size,size))
+    for i in range(size):
+        for j in range(size):
+            H[i,j] = gauss2D(sigma, mean, np.array([[i+0.5],[j+0.5]]))
+    H = np.divide(H, H[size//2, size//2])
+    return H
 
 def q_star(q):
     """
@@ -208,11 +227,3 @@ def r2radec(r):
     if m <= 0:
         ra = 2 * np.pi - ra
     return ra[0], dec[0]
-
-# https://www.geeksforgeeks.org/how-to-generate-2-d-gaussian-array-using-numpy/
-def gaussianKernel(size, sigma, mu):
-    return
-
-def gaussian(sigma, mu):
-    sigma_matrix = np.array([[sigma**2], [0]], [[0], [sigma**2]])
-    return 1 / (2 * np.pi * np.abs(sigma_matrix)**0.5) 

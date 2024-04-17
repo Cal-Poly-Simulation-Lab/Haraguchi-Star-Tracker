@@ -44,6 +44,7 @@ def parseCatalog(path, minMag, maxMag):
     catalogDF.sort_values(by=['Vmag'], inplace=True)
 
     numEntries = len(catalogDF)
+    print(numEntries)
 
     data_arr = np.empty([numEntries,4])
 

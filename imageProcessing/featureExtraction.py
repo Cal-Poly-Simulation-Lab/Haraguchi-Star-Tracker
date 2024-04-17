@@ -18,8 +18,12 @@ def detectionAndCentroiding(img, minArea, maxArea):
     analysis = cv.connectedComponentsWithStats(meanThresh, 4, cv.CV_16U) # or 32 bit signed, also decide 4 or 8 connectivity
     (numLabels, labeledImg, stats, geomCentroids) = analysis
 
-    cv.imshow("binary", meanThresh)
-    cv.waitKey()
+    print("numLabels = " + str(numLabels))
+
+    # cv.imshow("binary", meanThresh)
+    # cv.waitKey()
+    plt.imshow(meanThresh, cmap='gray', vmin=0, vmax=255)
+    plt.show()
 
     # plt.subplot(1,2,1)
     plt.imshow(labeledImg)
@@ -49,17 +53,17 @@ def detectionAndCentroiding(img, minArea, maxArea):
                 centroids.append(intensityCentroid)
                 unitVectors.append(s)
 
-                # print("star candidate")
-                # print("geometric centroid = " + str(geomCentroids[i]))
-                # print("intensity centroid = " + str(intensityCentroid))
-                # print(s)
-                # plt.subplot(1,3,1)
-                # plt.imshow(region)
-                # plt.subplot(1,3,2)
-                # plt.imshow(mask)
-                # plt.subplot(1,3,3)
-                # plt.imshow(starCandidate)
-                # plt.show()
+                print("star candidate")
+                print("geometric centroid = " + str(geomCentroids[i]))
+                print("intensity centroid = " + str(intensityCentroid))
+                print(s)
+                plt.subplot(1,3,1)
+                plt.imshow(region)
+                plt.subplot(1,3,2)
+                plt.imshow(mask)
+                plt.subplot(1,3,3)
+                plt.imshow(starCandidate)
+                plt.show()
     # convert lists to numpy arrays
     centroids = np.array(centroids)
     unitVectors = np.array(unitVectors) # unit vectors don't actually need to be in this function 

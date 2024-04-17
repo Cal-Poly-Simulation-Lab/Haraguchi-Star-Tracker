@@ -15,13 +15,16 @@ f = h / h_cm * l # pixels, system focal length
 # minMag = 4.4377 # minimum star magnitude displayable by screen
 # maxMag = -1.5829 # maximum displayable magnitude 
 # using jpl specs for now
-minMag = 3.9045
-maxMag = -2.1161
+# minMag = 3.9045
+# maxMag = -2.1161
 # all stars in catalog
-# minMag = 7.96
-# maxMag = -1.46
+minMag = 7.96
+maxMag = -1.46
 
 # catalog parameters
 catalogPath = "bs5_brief.csv" # path to catalog from where code will be run
 dataPath = "star_generation_data.csv" # path to csv file generated from catalog
 intensityPath = "magnitude2pixel.csv" # path to csv file with magnitude and pixel intensity data 
+
+# generation parameters
+maxStars = 50 # maximum number of stars to display in image
