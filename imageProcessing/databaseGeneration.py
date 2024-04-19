@@ -73,18 +73,19 @@ def K_vector(path):
     print(S)
 
     plt.plot(S[:,0], linestyle='None', marker='.')
-    plt.xlabel("progressive index")
-    plt.ylabel("S-vector")
+    plt.xlabel("Progressive Index")
+    plt.ylabel("S-Vector")
     plt.grid(True)
+
+    plt.show()
 
     # shifted best fit line
     D = (S[m-1][0] - S[0][0]) / (m - 1)
     a1 = m * D / (m - 1)
     a0 = S[0][0] - a1 - (D / 2)
 
-    # # build K-vector
+    # build K-vector
     S_only = S[:,0]
-    print(S_only)
     K = np.zeros([m,1]) # <---- really need to verify this, why are they only even? 
     K[-1] = m # set last element to m 
     for k in range(1,m-1): # K(0) = 0 so can start at 1 (check -1 instead of -2)
@@ -98,25 +99,25 @@ def K_vector(path):
         K[k] = idx_greater[0][0]
         # need to think about what to do here 
 
-    plt.plot(K, S_only, linestyle='None', marker=',')
+    plt.plot(K, S_only, linestyle='None', marker='.')
     plt.xlabel("K-vector")
     plt.ylabel("S-vector")
     plt.grid(True)
 
-    # plot cosTheta line 
+    plt.show()
 
-    print("K = ")
-    print(K)
-    print("SIJ = ")
-    print(S)
+    # # plot cosTheta line 
+
+    # print("K = ")
+    # print(K)
+    # print("SIJ = ")
+    # print(S)
     KSIJ = np.concatenate((K,S), axis=1)
-    print(KSIJ)
+    # print(KSIJ)
 
     # convert K, S, I, J to csv
     data = pd.DataFrame(KSIJ, columns=['K', 'S', 'I', 'J'])
     data.to_csv('KSIJ_arrays.csv', index=False)
-
-    plt.show()
 
     return
 

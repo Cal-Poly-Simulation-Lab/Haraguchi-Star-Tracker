@@ -1,8 +1,58 @@
-import cv2 as cv
 import numpy as np
+import catalogParsing as cp
+import cv2 as cv
+from matplotlib import pyplot as plt
 import pandas as pd
 
-def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, maxStars):
+# tests the star field generation algorithm using parameters and sample image 
+# provided in star id book 
+
+def main():
+    # attitude parameters 
+    ra = np.deg2rad(249.2104) # rad
+    dec = np.deg2rad(-12.0386) # rad
+    roll = np.deg2rad(13.3845) # rad
+    ra = 0
+    dec = 0
+    roll = 0
+    # ra = np.deg2rad(0)
+    # dec = np.deg2rad(10)
+    # roll = np.deg2rad(30)
+
+    # book example -------------------------------------
+    # physical system parameters 
+    fovx = np.deg2rad(12) # rad, square fov
+    fovy = np.deg2rad(12)
+    h = 1024 # pixels, screen height
+    w = 1024 # pixels, screen width
+    f = 58.4536 # mm, system focal length
+    # 1 pixel is 12x12 micrometers
+    f = f * 12 * 0.001
+    # new paper idea
+    f = 1 / np.tan(fovx / 2)
+    print("f = " + str(f))
+
+    # my parameters -------------------------------------
+    # physical system parameters 
+    fovx = np.deg2rad(66) # rad, square fov
+    fovy = np.deg2rad(41)
+    h = 600 # pixels, screen height
+    w = 1024 # pixels, screen width
+    h_cm = 8.988617 # screen height in cm
+    l = 13.06 # camera / screen separation in cm - should it be lens / screen?
+    f = h / h_cm * l # system focal length in pixels 
+    # print("f = " + str(f))
+
+    # catalog parameters
+    minMag = 6
+    maxMag = -1.46
+
+    # cp.parseCatalog("bs5_brief.csv", minMag, maxMag)
+    img = static_image("star_generation_data.csv", ra, dec, roll, fovx, fovy, f, h, w, 50)
+    plt.imshow(img, cmap='gray', vmin=0, vmax=255)
+    plt.show()
+
+def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars):
     """Generates a star field image in a given location
     
     Parameters
@@ -32,38 +82,36 @@ def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, maxStars):
     data_all = data.to_numpy()
     
     # convert st boresight direction to celestial ra and dec 
-    u_st_ECI = rot(u_st_st, q_ECI_st) # st boresight in ECI
-    (alpha, delta) = r2radec(u_st_ECI) # ECI vector to RA and DEC
-    print("looking at sky at RA = %f rad, DEC = %f rad" %(alpha, delta))
+    # u_st_ECI = rot(u_st_st, q_ECI_st) # st boresight in ECI
+    # (alpha, delta) = r2radec(u_st_ECI) # ECI vector to RA and DEC
+    alpha = ra0
+    delta = dec0
+    # print("looking at sky at RA = %f rad, DEC = %f rad" %(alpha, delta))
 
     # find range of star ra/dec values that will be in view 
-    fov = fov * np.pi / 180 # convert fov to rad
+    R = np.sqrt(fovx**2 + fovy**2) # from new paper 
+    # R = np.sqrt(2 * fov**2) / 2 # radius of circular field of view from star id book 
+    ra_min = alpha - R / np.cos(delta) # min/max ra 
+    ra_max = alpha + R / np.cos(delta)
 
-    # ra in range 0 to 2pi, dec in range -pi to pi
-    fov_type = "book" # book or rectangular
-    if fov_type == "book":
-        R = np.sqrt(2 * fov**2) / 2 # radius of circular field of view from star id book 
-        ra_min = alpha - R / np.cos(delta) # min/max ra 
-        ra_max = alpha + R / np.cos(delta)
-        dec_min = delta - R
+    ra_case = 0 # case 0 = ok, case 1 = split
+    if ra_min < 0:
+        ra_min += 2 * np.pi
+        ra_case = 1
+    elif ra_max > 2 * np.pi:
+        ra_max -= 2 * np.pi
+        ra_case = 21
 
-        if dec_min < -1 * np.pi / 2: # limit dec to +/-pi/2
-            dec_min = -1 * np.pi / 2
-        dec_max = delta + R
-        if dec_max > np.pi / 2:
-            dec_max = np.pi / 2
-    elif fov_type == "rectangular": # spread it out the right amount but seems to wide or something 
-        R_ra = np.sqrt(2 * (66 * np.pi / 180)**2) / 2 # 66 * np.pi / 180 / 2
-        R_dec = np.sqrt(2 * (41 * np.pi / 180)**2) # 41 * np.pi / 180 / 2
-        ra_min = alpha - R_ra / np.cos(delta) # min/max ra 
-        ra_max = alpha + R_ra / np.cos(delta)
-        dec_min = delta - R_dec
+    dec_min = delta - R
+    dec_max = delta + R
 
-        if dec_min < -1 * np.pi / 2: # limit dec to +/-pi/2
-            dec_min = -1 * np.pi / 2
-        dec_max = delta + R_dec
-        if dec_max > np.pi / 2:
-            dec_max = np.pi / 2
+    dec_case = 0 # case 0 = ok, case 1 = split
+    if dec_min < -np.pi / 2:
+        dec_min += np.pi
+        dec_case = 1
+    if dec_max > np.pi / 2:
+        dec_max -= np.pi
+        dec_case = 1
 
     print("ra min and max %f, %f dec min and max %f, %f" %(ra_min, ra_max, dec_min, dec_max))
     
@@ -73,18 +121,23 @@ def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, maxStars):
     dec = []
     inten = []
     for i in range(num_entries):
-        in_view = False
-        if data_all[i,1] > dec_min and data_all[i,1] < dec_max: # dec in range
-            # for ra need to consider wrapping since ranges 0-2pi
-            if ra_max > (2 * np.pi): # range wraps around
-                if data_all[i,0] > ra_min or data_all[i,0] < (ra_max - 2 * np.pi):
-                    in_view = True
-            elif ra_min < 0: # wraps on other end
-                if data_all[i,0] < ra_max or data_all[i,0] > (ra_min + 2 * np.pi):
-                    in_view = True
-            elif data_all[i,0] > ra_min or data_all[i,0] < ra_max: # regular case
-                in_view = True
-        if in_view:
+        ra_in_view = False
+        dec_in_view = False
+        match ra_case: # ra is first column no data_all[i,0]
+            case 0:
+                if data_all[i,0] > ra_min and data_all[i,0] < ra_max:
+                    ra_in_view = True
+            case 1:
+                if data_all[i,0] > ra_min or data_all[i,0] < ra_max:
+                    ra_in_view = True
+        match dec_case: # dec is data_all[i,1]
+            case 0:
+                if data_all[i,1] > dec_min and data_all[i,1] < dec_max:
+                    dec_in_view = True
+            case 1:
+                if data_all[i,1] > dec_min or data_all[i,1] < dec_max:
+                    dec_in_view = True
+        if ra_in_view and dec_in_view:
             ra.append(data_all[i,0])
             dec.append(data_all[i,1])
             inten.append(data_all[i,3])
@@ -92,30 +145,49 @@ def static_image(dataPath, q_ECI_st, u_st_st, fov, f, h, w, maxStars):
     # create image array 
     img = np.zeros((h,w), np.uint8)
 
-    # convert ra,dec -> ECI -> star tracker -> focal plane (u,v)
-    num_stars = min(len(ra), maxStars)
+    # convert ra,dec -> star tracker -> focal plane (u,v)
+    # num_stars = min(len(ra), maxStars)
+    num_stars = len(ra)
     for i in range(num_stars):
         rai = ra[i]
         deci = dec[i]
         u_star_ECI = np.array([[np.cos(deci) * np.cos(rai)],
                                [np.cos(deci) * np.sin(rai)],
                                [np.sin(deci)]])
-        u_star_st = rot(u_star_ECI, q_star(q_ECI_st))
-        u = f * u_star_st[1,0] / u_star_st[0,0] # have this be a condition depending on boresight direction
-        v = f * u_star_st[2,0] / u_star_st[0,0] # what did I mean by the above 
+        M = radec2M(ra0, dec0, roll0)
+        u_star_st = np.matmul(M.T, u_star_ECI)
+        # print(u_star_st)
+        # avoid matrix multiplication
+        X = f * (M[0,0] * u_star_ECI[0,0] + M[1,0] * u_star_ECI[1,0] + M[2,0] * u_star_ECI[2,0]) / (M[0,2] * u_star_ECI[0,0] + M[1,2] * u_star_ECI[1,0] + M[2,2] * u_star_ECI[2,0])
+        Y = f * (M[0,1] * u_star_ECI[0,0] + M[1,1] * u_star_ECI[1,0] + M[2,1] * u_star_ECI[2,0]) / (M[0,2] * u_star_ECI[0,0] + M[1,2] * u_star_ECI[1,0] + M[2,2] * u_star_ECI[2,0])
 
+        u0 = w / 2 # check which ones these should be - or if we make it zero will origin be easy?? 
+        v0 = h / 2
+
+        T = np.array([[f, 0, u0], [0, f, v0], [0, 0, 1]])
+
+        coords = np.matmul(T, u_star_st)
+        # X = coords[0,0] / coords[2,0]
+        # Y = coords[1,0] / coords[2,0]
+        # print("X,Y + " + str(X) + ", " + str(Y))
+
+        # u = f * u_star_st[1,0] / u_star_st[0,0] # have this be a condition depending on boresight direction
+        # v = f * u_star_st[2,0] / u_star_st[0,0] # what did I mean by the above 
+        # print("u,v = " + str(u) + ", " + str(v))
         starSize = 9
         border = starSize // 2
 
-        r = v + (h / 2) # unrounded centroids, directly from math in r,c coordinates 
-        c = u + (w / 2)
+        # used to be v and u for r and c
+        r = -1 * (Y - (h/2)) # unrounded centroids, directly from math in r,c coordinates 
+        c = X + (w/2)
 
-        # print("centroid = " + str(r) + ", " + str(c))
+        # print("r,c = " + str(r) + ", " + str(c))
 
         r_local = (r % 1) + border # local centroids, center of starSize x starSize square 
         c_local = (c % 1) + border
         r_floor = int(r // 1) # floored centroids, used for finding center 
         c_floor = int(c // 1)
+        # print("r floor, c floor = " + str(r_floor) + ", " + str(c_floor))
         H = gaussianKernel(starSize, np.array([[r_local],[c_local]]), 1.2)
         if 0 <= r_floor-border and r_floor+border < h and 0 <= c_floor-border and c_floor+border < w:
             for i in range(starSize):
@@ -242,3 +314,5 @@ def radec2M(ra, dec, roll):
     c3 = -np.sin(dec)
     M = np.array([[a1, a2, a3], [b1, b2, b3], [c1, c2, c3]])
     return M
+
+main()

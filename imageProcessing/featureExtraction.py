@@ -57,16 +57,16 @@ def detectionAndCentroiding(img, minArea, maxArea):
                 print("geometric centroid = " + str(geomCentroids[i]))
                 print("intensity centroid = " + str(intensityCentroid))
                 print(s)
-                plt.subplot(1,3,1)
-                plt.imshow(region)
-                plt.subplot(1,3,2)
-                plt.imshow(mask)
-                plt.subplot(1,3,3)
-                plt.imshow(starCandidate)
-                plt.show()
+                # plt.subplot(1,3,1)
+                # plt.imshow(region)
+                # plt.subplot(1,3,2)
+                # plt.imshow(mask)
+                # plt.subplot(1,3,3)
+                # plt.imshow(starCandidate)
+                # plt.show()
     # convert lists to numpy arrays
     centroids = np.array(centroids)
-    unitVectors = np.array(unitVectors) # unit vectors don't actually need to be in this function 
+    unitVectors = np.array(unitVectors) # unit vectors don't actually need to be in this function - uhhhh yeah they do 
 
     # plt.subplot(1,2,2)
     plt.scatter(geomCentroids[:,0], geomCentroids[:,1], marker='x')

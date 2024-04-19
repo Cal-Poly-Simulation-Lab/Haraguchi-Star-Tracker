@@ -3,14 +3,20 @@ import featureExtraction as fe
 import databaseGeneration as dg
 
 catalogPath = "bs5_brief.csv"
-minMag = 4.4377
-maxMag = -1.5829
+# my fake specs
+# minMag = 4.4377
+# maxMag = -1.5829
+# jpl specs
+minMag = 3.9045
+maxMag = -2.1161
+# all stars in catalog
+# minMag = 7.96
+# maxMag = -1.46
 vPath = "v_unit_vectors.csv"
 
 # only happens once or if parameters have changed
 # dg.parseCatalog(catalogPath, minMag, maxMag) # parse catalog to get unit vectors
 # dg.K_vector(vPath) # compute K-vector - then can read in vectors from csv file later  
-
 
 # read image in grayscale
 img = cv.imread("test_images/blurredTest.png", cv.IMREAD_GRAYSCALE)
@@ -19,7 +25,7 @@ cv.imshow("img", img)
 cv.waitKey()
 
 # threshold
-fe.detectionAndCentroiding(img, 0, 100)
+fe.detectionAndCentroiding(img, 0, 81)
 
 # tikzplotlib (formerly matplotlib2tikz) creates LaTeX code using the pgfplots package. It's available on Pypi, so it can be installed with pip.
 

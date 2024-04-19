@@ -20,13 +20,13 @@ def gaussianKernel(size, mean, sigma):
 
 # centroid = np.array([[2.06], [2.72]])
 centroid = np.array([[2.5], [2.5]])
-H = gaussianKernel(5, centroid, 1.2)
+H = gaussianKernel(5, centroid, 2)
 H = H * 255
 print(H)
 
 plt.imshow(H, cmap='gray', vmin=0, vmax=255)
 plt.axis('off')
-plt.savefig('5x5centered.png', bbox_inches='tight', pad_inches=0)
+plt.savefig('5x5sigma2.png', bbox_inches='tight', pad_inches=0)
 plt.show()
 
 # img = np.zeros((20,20), np.uint8)
