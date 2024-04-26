@@ -29,7 +29,7 @@ def parseCatalog(path, minMag, maxMag):
     # Ep_max = 8.0168e-6
     E = np.linspace(Ep_min, Ep_max, 156)
     mag = illuminance2magnitude(E)
-    px = np.linspace(100, 255, 156)
+    px = np.linspace(150, 255, 156)
 
     # read in file at path as pandas dataframe
     catalogDF = pd.read_csv(path)

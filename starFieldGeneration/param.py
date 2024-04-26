@@ -1,22 +1,25 @@
 import numpy as np
 
 # attitude parameters 
-q_ECI_st = np.array([[0], [0], [0], [1]]) # st frame to ECI
-u_st_st = np.array([[1], [0], [0]]) # boresight direction of st in st frame 
-# value of u_st_st affects conversion to u,v coordinates 
+ra0 = np.deg2rad(195) # big dipper
+dec0 = np.deg2rad(55)
+roll0 = np.deg2rad(180)
+# ra0 = np.deg2rad(249.2104) # orion
+# dec0 = np.deg2rad(-12.0386)
+# roll0 = np.deg2rad(13.3845)
+# ra0 = np.deg2rad(101.29) # sirius
+# dec0 = np.deg2rad(-16.716111)
+# roll0 = np.deg2rad(0)
 
 # physical system parameters 
-fov = 75 # degrees, smaller dimension field of view - or should this be 75? 
+fovx = np.deg2rad(66)
+fovy = np.deg2rad(41)
 h = 600 # pixels, screen height
 w = 1024 # pixels, screen width
 
-# h_cm = 12 # cm, image height on screen
-# l = 5 * 2.54 # cm, separation between camera and screen
-# f = h / h_cm * l # pixels, system focal length
-
 h_cm = 8.988617 # screen height in cm
 l = 13.06 # camera / screen separation in cm - should it be lens / screen?
-f = h / h_cm * l # system focal length in pixels 
+f = h / h_cm * l # system focal length in pixels
 
 # minMag = 4.4377 # minimum star magnitude displayable by screen
 # maxMag = -1.5829 # maximum displayable magnitude 
@@ -34,3 +37,5 @@ intensityPath = "magnitude2pixel.csv" # path to csv file with magnitude and pixe
 
 # generation parameters
 maxStars = 50 # maximum number of stars to display in image
+starSize = 5
+sigma = 1.2 # for gaussian spread of stars 

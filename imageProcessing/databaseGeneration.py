@@ -57,13 +57,13 @@ def K_vector(path):
     P = [] # P, I, J
     m = 0
     for i in range(numEntries):
-        for j in range(numEntries):
+        for j in range(i+1, numEntries): # change this to i+1 to numEntries to get rid of j,i duplicates 
             if i != j:
                 dot = np.dot(v[i], v[j])
                 if dot >= cosTheta:
                     P.append([dot, i, j])
                     m += 1
-    P = np.array(P) # convert to numpy array
+    P = np.array(P) # convert to numpy array 
     print("P =")
     print(P)
 

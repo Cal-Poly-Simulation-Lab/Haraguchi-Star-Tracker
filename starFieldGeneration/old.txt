@@ -1,3 +1,66 @@
+Quaternion functions from static image that I don't need anymore 
+
+def q_star(q):
+    """
+    Computes the quaternion conjugate q*
+
+    Parameters
+    ----------
+    q : numpy.ndarray
+        Quaternion [epsilon; eta]
+
+    Returns
+    -------
+    q_star : numpy.ndarray
+        Quaternion conjugate [epsilon; eta]
+    """
+    q_star = np.array([[-1 * q[0,0]], [-1 * q[1,0]], [-1 * q[2,0]], [q[3,0]]])
+    return q_star
+
+def q_mult_cross(p, q):
+    """
+    Computes the cross form of quaternion multiplication
+
+    Parameters
+    ----------
+    p : numpy.ndarray
+        First quaternion
+    q : numpy.ndarray
+        Second quaterion
+
+    Returns
+    -------
+    q_ret : numpy.ndarray
+        Quaternion product 
+    """
+    q_ret = np.array([p[0] * q[3] - p[1] * q[2] + p[2] * q[1] + p[3] * q[0],
+                      p[0] * q[2] - p[2] * q[0] + p[1] * q[3] + p[3] * q[1],
+                      p[1] * q[0] - p[0] * q[1] + p[2] * q[3] + p[3] * q[2],
+                      p[3] * q[3] - np.vdot(p[0:3], q[0:3])])
+    return q_ret
+
+def rot(v, q):
+    """
+    Rotates vector v by the quaternion q
+
+    Parameters
+    ----------
+    v : numpy.ndarray
+        Vector
+    q : numpy.ndarray
+        Quaternion
+
+    Returns
+    -------
+    v_rot : numpy.ndarray
+        Rotated vector
+    """
+    q_s = q_star(q)
+    v_q = np.array([v[0], v[1], v[2], [0]])
+    v_rot = q_mult_cross(q_mult_cross(q, v_q), q_s)
+    v_rot = v_rot[0:3]
+    return v_rot
+
     dynamic image initial try stuff
 
     # def dynamic_image():
