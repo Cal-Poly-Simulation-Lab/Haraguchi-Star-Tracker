@@ -34,9 +34,9 @@ img = cv.imread("test_images/big_dipper.png", cv.IMREAD_GRAYSCALE)
 # threshold
 unitVectors, numStars, center = fe.detectionAndCentroiding(img, 9, 25, h, w, f)
 
-s = fe.searchAngles(unitVectors)
+# s = fe.searchAngles(unitVectors)
 
-si.pyramid("KSIJ_arrays.csv", s, numStars, center)
+# si.pyramid("KSIJ_arrays.csv", s, numStars, center, unitVectors)
 
 
 # tikzplotlib (formerly matplotlib2tikz) creates LaTeX code using the pgfplots package. It's available on Pypi, so it can be installed with pip.

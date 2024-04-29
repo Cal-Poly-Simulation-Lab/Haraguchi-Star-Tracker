@@ -133,4 +133,4 @@ def crossMatrix(a):
     a = np.array([[0, -az, ay], [az, 0, -ax], [-ay, ax, 0]])
     return a
 
-main()
+# main()

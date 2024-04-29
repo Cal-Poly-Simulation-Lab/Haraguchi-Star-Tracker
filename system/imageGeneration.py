@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starSize, sigma):
+def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starSize, sigma):
     """Generates a star field image in a given location
     
     Parameters
@@ -67,7 +67,7 @@ def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, star
                     if data_all[i,0] > ra_min and data_all[i,0] < ra_max:
                         in_view = True
                 case 1:
-                    if data_all[i,0] > ra_min or data_all < ra_max:
+                    if data_all[i,0] > ra_min or data_all[i,0] < ra_max:
                         in_view = True
         if in_view:
             ra.append(data_all[i,0])
@@ -90,6 +90,7 @@ def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, star
     for idx in range(num_stars):
         rai = ra[idx]
         deci = dec[idx]
+        
         u_star_ICRF = np.array([[np.cos(deci) * np.cos(rai)],
                                [np.cos(deci) * np.sin(rai)],
                                [np.sin(deci)]])
@@ -97,7 +98,7 @@ def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, star
         u_star_st = np.matmul(M.T, u_star_ICRF)
 
         # u_star_st[2,0] = -1 * u_star_st[2,0]
-        print(u_star_st)
+        # print(u_star_st)
 
         # project into image plane
         X = f * u_star_st[0,0] / u_star_st[2,0]
@@ -108,6 +109,8 @@ def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, star
         # centroid in image bounds
         r = -1 * (Y - h/2)
         c = X + w/2
+
+        plt.text(c, r, str(index[idx]), color='white')
 
         # print("r,c = " + str(r) + ", " + str(c))
         # print("intensity = " + str(inten[i]))
@@ -127,6 +130,10 @@ def static_image(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, star
                     else:
                         img[r_floor-border+i, c_floor-border+j] += inten[i] * H[i,j]
 
+    plt.imshow(img)
+    # plt.savefig("global_label.png")
+    # plt.show()
+    
     return img
 
 def gauss2D(sigma, mean, x):

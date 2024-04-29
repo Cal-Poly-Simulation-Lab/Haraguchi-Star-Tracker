@@ -1,19 +1,12 @@
-import cv2 as cv
+import cv2 as cv 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-import QUEST
 
-'''
-goal of this piece of code is to:
-    detect stars in the image that are brighter than the threshold - done in thresholding
-    filter out too small and grouped stars - done in connected components labeling
-    determine centroids and convert to body vectors 
-    calculate brightness of each star - start with purely geometric information 
-'''
-
-def detectionAndCentroiding(img, minArea, maxArea, h, w, f):
-    row,col = img.shape
+def stOperation(img, minArea, maxArea, h, w, f):
+    """
+    covers all aspects of star tracker operaiton
+    """
     meanIntensity = np.mean(img) # calculate pixel intensity mean for the whole image
 
     ret,meanThresh = cv.threshold(img, meanIntensity, 255, cv.THRESH_BINARY) # threshold using that value
@@ -29,7 +22,6 @@ def detectionAndCentroiding(img, minArea, maxArea, h, w, f):
 
     # plt.subplot(1,2,1)
     plt.imshow(labeledImg)
-    plt.title("original labeled image")
 
     centroids = []
     unitVectors = []
@@ -38,6 +30,7 @@ def detectionAndCentroiding(img, minArea, maxArea, h, w, f):
     numCandidates = 0
     centerStar = 0
     minDist = np.sqrt((h/2)**2 + (w/2)**2)
+    centerStarList = np.zeros((numLabels-1, 2))
     for i in range(numLabels):
         area = stats[i, cv.CC_STAT_AREA]
         if area >= minArea and area <= maxArea: # area falls within expected range
@@ -68,6 +61,9 @@ def detectionAndCentroiding(img, minArea, maxArea, h, w, f):
                 if dist < minDist:
                     minDist = dist
                     centerStar = numCandidates
+                centerStarList[numCandidates,0] = numCandidates
+                centerStarList[numCandidates,1] = dist
+
 
                 s = getUnitVector(X, Y, f)
                 # print(s)
@@ -80,94 +76,98 @@ def detectionAndCentroiding(img, minArea, maxArea, h, w, f):
                 # plt.subplot(1,3,3)
                 # plt.imshow(starCandidate)
                 # plt.show()
-                
-    # plt.savefig('big_dipper_labeled.png')
+
+    # plt.savefig("local_label.png")
     # plt.show()
+    # sort center star list by second column 
+    centerStarList = centerStarList[centerStarList[:,1].argsort()]
+    centerStarList = centerStarList[:,0]
 
     # convert lists to numpy arrays
     centroids = np.array(centroids)
     # print(centroids)
     unitVectors = np.array(unitVectors) # unit vectors don't actually need to be in this function - uhhhh yeah they do 
 
-    # find three other stars closest to center star
-    # define center star as s_i
-    neighbors = nearestNeighbors(unitVectors, centerStar)
-    print("center star = " + str(centerStar))
-    print("neighbors = " + str(neighbors))
+    # iterate through stars, starting with center, until found a match 
+    match = False
+    for i in range(numCandidates):
+        centerStar = int(centerStarList[i])
+        # print("trying star " + str(centerStar))
 
-    # give the stars the right names
-    si = centerStar
-    sj = neighbors[0]
-    sk = neighbors[1]
-    sr = neighbors[2]
+        # find three other stars closest to center star
+        # define center star as s_i
+        neighbors = nearestNeighbors(unitVectors, centerStar)
+        # print("center star = " + str(centerStar))
+        # print("neighbors = " + str(neighbors))
 
-    # # make hash table for i-k pairs 
-    Mik = databaseQuery(si, sk, unitVectors)
-    print("Mik = " + str(Mik))
+        # give the stars the right names
+        si = centerStar
+        sj = neighbors[0]
+        sk = neighbors[1]
+        sr = neighbors[2]
 
-    # make hash table for i-r pairs
-    Mir = databaseQuery(si, sr, unitVectors)
-    print("Mir = " + str(Mir))
+        # # make hash table for i-k pairs 
+        Mik = databaseQuery(si, sk, unitVectors)
+        # print("Mik = " + str(Mik))
 
-    # repeat for i-j pairs
-    Mij = databaseQuery(si, sj, unitVectors)
-    print("Mij = " + str(Mij))
+        # make hash table for i-r pairs
+        Mir = databaseQuery(si, sr, unitVectors)
+        # print("Mir = " + str(Mir))
 
-    # iterate through pairs in Mij 
-    num_ij = len(Mij) # number of pairs in ij 
-    i_list = list(Mij.keys())
-    j_list = list(Mij.values())
-    ck = 0
-    cr = 0
-    for i in range(num_ij):
-        ci = i_list[i]
-        cj = j_list[i]
-        ck = Mik.get(ci)
-        cr = Mir.get(ci)
-        if ck != 0 and cr != 0:
+        # repeat for i-j pairs
+        Mij = databaseQuery(si, sj, unitVectors)
+        # print("Mij = " + str(Mij))
+
+        # iterate through pairs in Mij 
+        num_ij = len(Mij) # number of pairs in ij 
+        i_list = list(Mij.keys())
+        j_list = list(Mij.values())
+        for j in range(num_ij):
+            ci = i_list[j]
+            cj = j_list[j]
+            ck = Mik.get(ci)
+            cr = Mir.get(ci)
+            if ck != None and cr != None:
+                match = True
+                break
+        if match:
             break
-    print("confirmed??")
-    print("ci = " + str(ci) + ", si = " + str(si))
-    print("cj = " + str(cj) + ", sj = " + str(sj))
-    print("ck = " + str(ck) + ", sk = " + str(sk))
-    print("cr = " + str(cr) + ", sr = " + str(sr))
 
-    # make arrays of unit vectors and weights 
-    sa = np.empty((4,3))
-    sb = np.empty((4,3))
-    w = np.ones((4,1))
+    if match:
+        # print("confirmed")
+        # print("ci = " + str(ci) + ", si = " + str(si))
+        # print("cj = " + str(cj) + ", sj = " + str(sj))
+        # print("ck = " + str(ck) + ", sk = " + str(sk))
+        # print("cr = " + str(cr) + ", sr = " + str(sr))
+
+        # make arrays of unit vectors and weights 
+        sa = np.empty((4,3))
+        sb = np.empty((4,3))
+        w = np.ones((4,1))
+        
+        sb[0,:] = unitVectors[si]
+        sb[1,:] = unitVectors[sj]
+        sb[2,:] = unitVectors[sk]
+        sb[3,:] = unitVectors[sr]
+
+        inertialVectors = pd.read_csv("v_unit_vectors.csv")
+        inertialVectors = inertialVectors.to_numpy()
+
+        sa[0,:] = inertialVectors[int(ci)]
+        sa[1,:] = inertialVectors[int(cj)]
+        sa[2,:] = inertialVectors[int(ck)]
+        sa[3,:] = inertialVectors[int(cr)]
+
+        q_ba = quest(sa, sb, w)
+        C_ba = q2C(q_ba)
+
+        return q_ba, C_ba
     
-    sb[0,:] = unitVectors[si]
-    sb[1,:] = unitVectors[sj]
-    sb[2,:] = unitVectors[sk]
-    sb[3,:] = unitVectors[sr]
-
-    inertialVectors = pd.read_csv("v_unit_vectors.csv")
-    inertialVectors = inertialVectors.to_numpy()
-
-    sa[0,:] = inertialVectors[int(ci)]
-    sa[1,:] = inertialVectors[int(cj)]
-    sa[2,:] = inertialVectors[int(ck)]
-    sa[3,:] = inertialVectors[int(cr)]
-
-    q = QUEST.quest(sa, sb, w)
-    print(q)
-
-    C = q2C(q)
-    print(C)
-
-    # plt.subplot(1,2,2)
-    # plt.ylim(600,0)
-    # plt.scatter(geomCentroids[:,0], geomCentroids[:,1], marker='x')
-    # plt.scatter(centroids[:,1], centroids[:,0], marker='x') # converting r,c to x,y
-    # plt.axis('scaled')
-    # plt.title("accepted centroids")
-    # plt.show()
-
-    return (unitVectors, numCandidates, centerStar)
+    return 0
 
 # finds all possible star distances that agree with the distances between star
 # 1 and star 2 
+# make a0 and a1 passed in better 
 def databaseQuery(s1, s2, unitVectors, a0=0.2588183885561099, a1=1.7755617311227315e-05):
     KSIJ = pd.read_csv("KSIJ_arrays.csv")
     KSIJ = KSIJ.to_numpy()
@@ -179,11 +179,12 @@ def databaseQuery(s1, s2, unitVectors, a0=0.2588183885561099, a1=1.7755617311227
     M12 = {}
     I_12 = []
     J_12 = []
-    dist = np.dot(unitVectors[s1], unitVectors[s2])
-    l_bot = max(int(np.floor((dist - a0) / a1)), 0)
-    l_top = min(int(np.ceil((dist - a0) / a1)), len(K) - 1)
-    k_start = int(K[l_bot] + 1)
-    k_end = int(K[l_top] + 1) # there shouldn't be a plus 1 here but then it doesn't work 
+    angle = np.arccos(np.dot(unitVectors[s1], unitVectors[s2]))
+    error = 0
+    l_bot = max(int(np.floor((np.cos(angle + error) - a0) / a1) - 1), 0)
+    l_top = min(int(np.ceil((np.cos(angle - error) - a0) / a1) - 1), len(K) - 1)
+    k_start = int(K[l_bot])
+    k_end = int(K[l_top]) # there shouldn't be a plus 1 here but then it doesn't work 
     # print("dist = " + str(dist))
     # print("l = " + str(l_bot) + ", " + str(l_top))
     # print("k = " + str(k_start) + ", " + str(k_end))
@@ -191,6 +192,7 @@ def databaseQuery(s1, s2, unitVectors, a0=0.2588183885561099, a1=1.7755617311227
         I_12.append(I[i])
         J_12.append(J[i])
         M12.update({I[i] : J[i]})
+        M12.update({J[i] : I[i]})
     return M12
 
 # given the id of the center star, finds the three other stars that are the 
@@ -231,7 +233,6 @@ def searchAngles(unitVectors):
 
     return S
 
-
 def getIntensityCentroid(starCandidate, left, top): # need x and y coordinates so need the whole image - or just the new origin?? 
     row,col = starCandidate.shape
     r0_num = 0
@@ -258,6 +259,94 @@ def rc2XY(r, c, h, w):
     Y = h/2 - r
     return (X, Y)
 
+def quest(sa, sb, w):
+    """
+    Uses the QUEST algorithm to compute the optimal quaternion.
+
+    Parameters
+    ----------
+    sa : np.ndarray
+        nx3 array of inertial vectors
+    sb : np.ndarray
+        nx3 array of body vectors
+    w : np.ndarray
+        nx1 vector of weights
+
+    Returns
+    -------
+    q : np.ndarray
+        4x1 quaternion [epsilon eta]
+    """
+
+    B = np.zeros((3,3))
+    lam0 = 0
+    n = len(w)
+    for i in range(n):
+        sa_i = np.atleast_2d(sa[i,:]).T
+        sb_i = np.atleast_2d(sb[i,:])
+        B += w[i,0] * np.matmul(sa_i, sb_i)
+        lam0 += w[i,0] # initial guess as sum of weights 
+    B = B.T
+
+    K12 = np.array([[B[1,2] - B[2,1]], [B[2,0] - B[0,2]], [B[0,1] - B[1,0]]])
+    K22 = np.trace(B)
+
+    S = B + B.T
+
+    a = K22**2 - np.trace(adj3x3(S))
+    b = (K22**2 + np.matmul(K12.T, K12))[0,0]
+    c = (np.linalg.det(S) + np.matmul(K12.T, np.matmul(S, K12)))[0,0]
+    d = np.matmul(K12.T, np.matmul(np.matmul(S,S), K12))[0,0]
+
+    # lam = newtonRaphson(lam0, a, b, c, d, K22)
+    lam = newtonsMethod(lam0, a, b, c, d, K22, 1e-3)
+
+    alpha = lam**2 - K22**2 + np.trace(adj3x3(S))
+    beta = lam - K22
+    gamma = (lam + K22) * alpha - np.linalg.det(S)
+    x = np.matmul(alpha * np.identity(3) + beta * S + np.matmul(S,S), K12)
+
+    q = 1 / np.sqrt(gamma**2 + np.matmul(x.T, x)) * np.atleast_2d(np.append(x, gamma)).T
+    return q
+
+# based on matlab's adjoint function - unclear if this is right 
+def adj3x3(A):
+    """
+    Computes the adjoint of a 3x3 matrix, based on MATLAB's implementation
+
+    Parameters
+    ----------
+    A : numpy.ndarray
+        3x3 matrix
+
+    Returns
+    -------
+    X : numpy.ndarray
+        3x3 matrix adjoint
+    """
+    U, S, Vh = np.linalg.svd(A)
+    adjs = np.zeros((3,3))
+    adjs[0,0] = S[1] * S[2]
+    adjs[1,1] = S[0] * S[2]
+    adjs[2,2] = S[0] * S[1]
+    X = np.linalg.det(np.matmul(U, Vh)) * np.matmul(Vh.T, np.matmul(adjs, U.T))
+    return X
+
+def func(lam, a, b, c, d, K22):
+    return lam**4 - (a + b) * lam**2 - c * lam + (a * b + c * K22 - d)
+
+def funcPrime(lam, a, b, c):
+    return 4 * lam**3 - 2 * (a + b) * lam - c
+
+def newtonsMethod(lam0, a, b, c, d, K22, tol):
+    lam1 = lam0 - func(lam0, a, b, c, d, K22) / funcPrime(lam0, a, b, c)
+    err = abs(lam1 - lam0)
+    while err > tol:
+        lam0 = lam1
+        lam1 = lam0 - func(lam0, a, b, c, d, K22) / funcPrime(lam0, a, b, c)
+        err = abs(lam1 - lam0)
+    return lam1
+
 def q2C(q):
     epsilon = q[0:3,:]
     eta = q[3,0]
@@ -265,4 +354,8 @@ def q2C(q):
     return C
 
 def crossMatrix(a):
-    return np.array([[0, -a[2,0], a[1,0]], [a[2,0], 0, -a[0,0]], [-a[1,0], a[0,0], 0]])
+    ax = a[0,0]
+    ay = a[1,0]
+    az = a[2,0]
+    a = np.array([[0, -az, ay], [az, 0, -ax], [-ay, ax, 0]])
+    return a
