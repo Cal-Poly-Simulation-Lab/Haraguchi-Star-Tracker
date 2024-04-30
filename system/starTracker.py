@@ -250,13 +250,14 @@ def getIntensityCentroid(starCandidate, left, top): # need x and y coordinates s
 
 # based on markley and crassidis pg 126
 def getUnitVector(X, Y, f):
-    s = np.array([X, Y, -f]) # as row vector for appending to list 
+    s = np.array([X, Y, f]) # as row vector for appending to list 
     s = 1 / np.sqrt(X**2 + Y**2 + f**2) * s
     return s
 
 def rc2XY(r, c, h, w):
     X = c - w/2
-    Y = h/2 - r
+    # Y = h/2 - r
+    Y = r - h/2
     return (X, Y)
 
 def quest(sa, sb, w):

@@ -50,6 +50,13 @@ C_book = [0.4153, 0.4472, 0.7921;
           -0.7562, 0.6537, 0.0274;
           -0.5056, -0.6104, 0.6097];
 C2q(C_book)
+C_true = [0.433, 0.4356, 0.7891;
+          -0.75, 0.6597, 0.0474;
+          -0.5, -0.6124, 0.6124];
+C_true = Cz(60) * Cy(-30) * Cx(45);
+
+C_error = C * C_true'
+phi = acosd(0.5 * (trace(C_error) - 1))
 
 function [lam] = newtonRaphson(lam, a, b, c, d, K22)
 h = func(lam, a, b, c, d, K22) / funcPrime(lam, a, b, c);
@@ -89,6 +96,27 @@ else
     q(2) = sqrt((1 + C(2,2)) / 2);
     q(3) = sqrt((1 + C(3,3)) / 2);
 end
+end
+
+function C = Cz(a)
+a = a * pi / 180;
+C = [cos(a), sin(a), 0;
+     -sin(a), cos(a), 0;
+     0, 0, 1];
+end
+
+function C = Cy(a)
+a = a * pi / 180;
+C = [cos(a), 0, -sin(a);
+     0, 1, 0;
+     sin(a), 0, cos(a)];
+end
+
+function C = Cx(a)
+a = a * pi / 180;
+C = [1, 0, 0;
+     0, cos(a), sin(a);
+     0, -sin(a), cos(a)];
 end
 
 % q = [-0.17808894; 0.42039834; -0.38820679; 0.80052798]

@@ -76,7 +76,7 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
             index.append(i)
 
     # get rotation matrix from st to icrf
-    M = radec2M(ra0, dec0, roll0)
+    Cbi = radec2M(ra0, dec0, roll0)
     
     # create image array 
     img = np.zeros((h,w), np.uint8)
@@ -95,7 +95,7 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
                                [np.cos(deci) * np.sin(rai)],
                                [np.sin(deci)]])
         # transform to star tracker framt
-        u_star_st = np.matmul(M.T, u_star_ICRF)
+        u_star_st = np.matmul(Cbi, u_star_ICRF)
 
         # u_star_st[2,0] = -1 * u_star_st[2,0]
         # print(u_star_st)
@@ -107,7 +107,8 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
         # print("X,Y = " + str(X) + ", " + str(Y))
 
         # centroid in image bounds
-        r = -1 * (Y - h/2)
+        # r = -1 * (Y - h/2)
+        r = Y + h/2
         c = X + w/2
 
         plt.text(c, r, str(index[idx]), color='white')
@@ -198,8 +199,9 @@ def radec2M(alpha, delta, phi):
         Rotation matrix 
     """
     M1 = np.array([[np.cos(alpha - np.pi/2), -np.sin(alpha - np.pi/2), 0], [np.sin(alpha - np.pi/2), np.cos(alpha - np.pi/2), 0], [0, 0, 1]])
-    M2 = np.array([[1, 0, 0], [0, np.cos(delta + np.pi/2), -np.sin(delta + np.pi/2)], [0, np.sin(delta + np.pi/2), np.cos(delta + np.pi/2)]])
+    # I changed M2 to have -pi/2 instead because then it rotates pointing vector to [0; 0; 1]
+    M2 = np.array([[1, 0, 0], [0, np.cos(delta - np.pi/2), -np.sin(delta - np.pi/2)], [0, np.sin(delta - np.pi/2), np.cos(delta - np.pi/2)]])
     M3 = np.array([[np.cos(phi), -np.sin(phi), 0], [np.sin(phi), np.cos(phi), 0], [0, 0, 1]])
     Mi = np.matmul(M2, M3)
     M = np.matmul(M1, Mi)
-    return M
+    return M.T

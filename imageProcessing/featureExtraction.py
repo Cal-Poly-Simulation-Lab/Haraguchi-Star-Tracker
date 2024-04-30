@@ -13,7 +13,6 @@ goal of this piece of code is to:
 '''
 
 def detectionAndCentroiding(img, minArea, maxArea, h, w, f):
-    row,col = img.shape
     meanIntensity = np.mean(img) # calculate pixel intensity mean for the whole image
 
     ret,meanThresh = cv.threshold(img, meanIntensity, 255, cv.THRESH_BINARY) # threshold using that value
@@ -251,11 +250,13 @@ def getIntensityCentroid(starCandidate, left, top): # need x and y coordinates s
 def getUnitVector(X, Y, f):
     s = np.array([X, Y, -f]) # as row vector for appending to list 
     s = 1 / np.sqrt(X**2 + Y**2 + f**2) * s
+    print(s)
     return s
 
 def rc2XY(r, c, h, w):
     X = c - w/2
-    Y = h/2 - r
+    # Y = h/2 - r
+    Y = r - h/2
     return (X, Y)
 
 def q2C(q):

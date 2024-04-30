@@ -10,6 +10,12 @@ unit = [cosd(dec) * cosd(ra);
 
 q = [0.58072572; 0.75641404; 0.23865935; 0.18340433];
 C = q2C(q);
+C_true = [0.433, 0.4356, 0.7891;
+          -0.75, 0.6597, 0.0474;
+          -0.5, -0.6124, 0.6124];
+C_error = C * C_true';
+phi = acosd(0.5 * (trace(C_error) - 1))
+
 [yaw, pitch, roll] = C2euler(C);
 % rotate z into inertial
 body = [0; 0; 1];

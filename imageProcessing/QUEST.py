@@ -23,6 +23,11 @@ def main():
     print(q)
     C = q2C(q)
     print(C)
+    C_true = np.array([[0.4330, 0.4356, 0.7891], [-0.7500, 0.6597, 0.0474], [-0.5000, -0.6124, 0.6124]])
+    C_error = np.matmul(C, C_true.T)
+    print(C_error)
+    cosphi = 0.5 * (np.trace(C_error) - 1)
+    print(np.rad2deg(np.arccos(cosphi))) # difference from their answer comes from hard coding the true matrix 
     
 def quest(sa, sb, w):
     """
@@ -133,4 +138,4 @@ def crossMatrix(a):
     a = np.array([[0, -az, ay], [az, 0, -ax], [-ay, ax, 0]])
     return a
 
-# main()
+main()
