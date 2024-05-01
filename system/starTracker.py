@@ -18,10 +18,10 @@ def stOperation(img, minArea, maxArea, h, w, f):
     # cv.imshow("binary", meanThresh)
     # cv.waitKey()
     # plt.imshow(meanThresh, cmap='gray', vmin=0, vmax=255)
+    plt.imshow(img)
     # plt.show()
 
     # plt.subplot(1,2,1)
-    plt.imshow(labeledImg)
 
     centroids = []
     unitVectors = []
@@ -66,7 +66,6 @@ def stOperation(img, minArea, maxArea, h, w, f):
 
 
                 s = getUnitVector(X, Y, f)
-                # print(s)
                 unitVectors.append(s)
                 numCandidates += 1
                 # plt.subplot(1,3,1)
@@ -88,9 +87,17 @@ def stOperation(img, minArea, maxArea, h, w, f):
     # print(centroids)
     unitVectors = np.array(unitVectors) # unit vectors don't actually need to be in this function - uhhhh yeah they do 
 
+    # get a values from K-vector
+    a_values = pd.read_csv("a_values.csv")
+    a_values = a_values.to_numpy()
+    a0 = a_values[0,0]
+    a1 = a_values[1,0]
+
     # iterate through stars, starting with center, until found a match 
     match = False
     for i in range(numCandidates):
+        matchesFound = 0
+
         centerStar = int(centerStarList[i])
         # print("trying star " + str(centerStar))
 
@@ -107,15 +114,15 @@ def stOperation(img, minArea, maxArea, h, w, f):
         sr = neighbors[2]
 
         # # make hash table for i-k pairs 
-        Mik = databaseQuery(si, sk, unitVectors)
+        Mik = databaseQuery(si, sk, unitVectors, a0, a1)
         # print("Mik = " + str(Mik))
 
         # make hash table for i-r pairs
-        Mir = databaseQuery(si, sr, unitVectors)
+        Mir = databaseQuery(si, sr, unitVectors, a0, a1)
         # print("Mir = " + str(Mir))
 
         # repeat for i-j pairs
-        Mij = databaseQuery(si, sj, unitVectors)
+        Mij = databaseQuery(si, sj, unitVectors, a0, a1)
         # print("Mij = " + str(Mij))
 
         # iterate through pairs in Mij 
@@ -128,12 +135,37 @@ def stOperation(img, minArea, maxArea, h, w, f):
             ck = Mik.get(ci)
             cr = Mir.get(ci)
             if ck != None and cr != None:
-                match = True
-                break
-        if match:
-            break
+                # check that all 6 distances agree - it's matching wrong if a different pair comes up first 
+                # match = True
+                matchesFound += 1
+                # saving last found in case it's the only one
+                ci_match = ci
+                cj_match = cj
+                ck_match = ck
+                cr_match = cr
+                # print("found a match")
+                # print("ci = " + str(ci) + ", si = " + str(si))
+                # print("cj = " + str(cj) + ", sj = " + str(sj))
+                # print("ck = " + str(ck) + ", sk = " + str(sk))
+                # print("cr = " + str(cr) + ", sr = " + str(sr))
+                if matchesFound > 1:
+                    break
+                # break
+        if matchesFound == 1:
+            ci = ci_match
+            cj = cj_match
+            ck = ck_match
+            cr = cr_match
+            # if distanceCheck(si, sj, sk, sr, ci, cj, ck, cr, unitVectors, a0, a1):
+            #     break
+            # check distances here, if they agree then break, if not then check new star
 
-    if match:
+            break
+        # print(str(matchesFound) + " matches found with star " + str(centerStar))
+
+        # need to actually check that the 6 distances agree 
+
+    if matchesFound == 1:
         # print("confirmed")
         # print("ci = " + str(ci) + ", si = " + str(si))
         # print("cj = " + str(cj) + ", sj = " + str(sj))
@@ -168,7 +200,7 @@ def stOperation(img, minArea, maxArea, h, w, f):
 # finds all possible star distances that agree with the distances between star
 # 1 and star 2 
 # make a0 and a1 passed in better 
-def databaseQuery(s1, s2, unitVectors, a0=0.2588183885561099, a1=1.7755617311227315e-05):
+def databaseQuery(s1, s2, unitVectors, a0, a1):
     KSIJ = pd.read_csv("KSIJ_arrays.csv")
     KSIJ = KSIJ.to_numpy()
     K = KSIJ[:,0]
@@ -177,23 +209,53 @@ def databaseQuery(s1, s2, unitVectors, a0=0.2588183885561099, a1=1.7755617311227
     J = KSIJ[:,3]
     
     M12 = {}
+    # M12 = hashTable()
     I_12 = []
     J_12 = []
     angle = np.arccos(np.dot(unitVectors[s1], unitVectors[s2]))
-    error = 0
-    l_bot = max(int(np.floor((np.cos(angle + error) - a0) / a1) - 1), 0)
-    l_top = min(int(np.ceil((np.cos(angle - error) - a0) / a1) - 1), len(K) - 1)
+    error = 0.00078507 # have this value calculated somewhere!!
+    l_bot = int(np.floor((np.cos(angle + error) - a0) / a1) - 1)
+    l_top = int(np.ceil((np.cos(angle - error) - a0) / a1) - 1) - 1
     k_start = int(K[l_bot])
-    k_end = int(K[l_top]) # there shouldn't be a plus 1 here but then it doesn't work 
+    k_end = int(K[l_top]) - 1
+    # there shouldn't be a plus 1 here but then it doesn't work 
     # print("dist = " + str(dist))
     # print("l = " + str(l_bot) + ", " + str(l_top))
     # print("k = " + str(k_start) + ", " + str(k_end))
-    for i in range(k_start, k_end + 1):
+    for i in range(k_start, k_end+1):
         I_12.append(I[i])
         J_12.append(J[i])
         M12.update({I[i] : J[i]})
         M12.update({J[i] : I[i]})
+        # M12.insert(I[i], J[i])
+        # M12.insert(J[i], I[i])
     return M12
+
+def distanceCheck(si, sj, sk, sr, ci, cj, ck, cr, unitVectors, a0, a1):
+    KSIJ = pd.read_csv("KSIJ_arrays.csv")
+    KSIJ = KSIJ.to_numpy()
+    K = KSIJ[:,0]
+    S = KSIJ[:,1]
+    I = KSIJ[:,2]
+    J = KSIJ[:,3]
+
+    local_id = [si, sj, sk, sr]
+    global_id = [ci, cj, ck, cr]
+    error = 0.00078507 # have this value calculated somewhere!!
+
+    for s1 in range(4):
+        for s2 in range(s1+1,4):
+            if s1 != s2:
+                # for local angles
+                angle = np.arccos(np.dot(unitVectors[local_id[s1]], unitVectors[local_id[s2]]))
+                l_bot = np.cos(angle + error)
+                l_top = np.cos(angle - error)
+                # for true angle - need to read in things from actual unit vectors, or store angle data somewhere 
+                dot = np.dot(c1, c2)
+                if dot < l_bot or dot > l_top:
+                    return False
+    return True
+
 
 # given the id of the center star, finds the three other stars that are the 
 # closest to it 

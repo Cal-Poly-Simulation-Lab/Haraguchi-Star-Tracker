@@ -97,8 +97,7 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
         # transform to star tracker framt
         u_star_st = np.matmul(Cbi, u_star_ICRF)
 
-        # u_star_st[2,0] = -1 * u_star_st[2,0]
-        # print(u_star_st)
+        # u_star_st[2,0] = -1 * u_star_st[2,0]]
 
         # project into image plane
         X = f * u_star_st[0,0] / u_star_st[2,0]
@@ -134,6 +133,7 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
     plt.imshow(img)
     # plt.savefig("global_label.png")
     # plt.show()
+    plt.close()
     
     return img
 

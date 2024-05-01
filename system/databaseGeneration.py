@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import bisect
 
 def generationCatalog(path, minMag, maxMag):
     """
@@ -113,53 +114,63 @@ def K_vector(path):
 
     cosTheta = np.cos(75 * np.pi / 180) # cos thetaFOV for visibility condition 
     numEntries = len(v)
-    # m = numEntries * numEntries - numEntries # number of admissible star pairs - m is actually the number that fit the criteria
-    P = [] # P, I, J
+    PIJ = [] # P, I, J
     m = 0
     for i in range(numEntries):
         for j in range(i+1, numEntries): # change this to i+1 to numEntries to get rid of j,i duplicates 
+        # for j in range(numEntries):    
             if i != j:
                 dot = np.dot(v[i], v[j])
                 if dot >= cosTheta:
-                    P.append([dot, i, j])
+                    PIJ.append([dot, i, j])
                     m += 1
-    P = np.array(P) # convert to numpy array 
-    print("P =")
-    print(P)
+    PIJ = np.array(PIJ) # convert to numpy array 
+    # print("P =")
+    # print(PIJ)
 
     # sort P to get S 
-    S = P[P[:,0].argsort()] # S, I, J
-    print("S =")
-    print(S)
+    SIJ = PIJ[PIJ[:,0].argsort()] # S, I, J
+    S = SIJ[:,0]
+    # print("S =")
+    # print(SIJ)
 
-    plt.plot(S[:,0], linestyle='None', marker='.')
+    plt.plot(SIJ[:,0], linestyle='None', marker='.')
     plt.xlabel("Progressive Index")
     plt.ylabel("S-Vector")
     plt.grid(True)
 
     plt.show()
 
-    # shifted best fit line
-    D = (S[m-1][0] - S[0][0]) / (m - 1)
-    a1 = m * D / (m - 1)
-    a0 = S[0][0] - a1 - (D / 2)
+    # my version
+    D = (S[-1] - S[0]) / (m - 1)
+    a0 = S[0] - D/2 # intercept
+    a1 = (S[m-1] - S[0] + D) / (m - 1) # slope
+    # shifted best fit line - version from search less paper
+    # D = (S[m-1][0] - S[0][0]) / (m - 1)
+    # a1 = m * D / (m - 1)
+    # a0 = S[0][0] - a1 - (D / 2)
+    # version from fast on board paper
+    # a1 = (S[-1][0] - S[0][0]) / (m - 1)
+    # a0 = m * (S[-1][0] - S[0][0]) / (m - 1)
 
     # build K-vector
-    S_only = S[:,0]
-    K = np.zeros([m,1]) # <---- really need to verify this, why are they only even? 
-    K[-1] = m # set last element to m 
-    for k in range(1,m-1): # K(0) = 0 so can start at 1 (check -1 instead of -2)
+    K = []
+    for k in range(m):
         val = a1 * k + a0
+        num = bisect.bisect_left(S, val)
+        K.append([num])
+        # l = lessElements(S_only, val)
+        # K[k] = l
         # print("val = " + str(val))
         # idx_less = np.where(S_only <= val)
         # print("idx = " + str(idx_less))
-        idx_greater = np.where(S_only > val)
+        # idx_greater = np.where(S_only > val)
         # print(idx_less[0])
         # # print("more = " + str(idx_greater))
-        K[k] = idx_greater[0][0]
+        # K[k] = idx_greater[0][0]
         # need to think about what to do here 
 
-    plt.plot(K, S_only, linestyle='None', marker='.')
+    plt.plot(K, S, linestyle='None', marker='.')
     plt.xlabel("K-vector")
     plt.ylabel("S-vector")
     plt.grid(True)
@@ -172,16 +183,26 @@ def K_vector(path):
     # print(K)
     # print("SIJ = ")
     # print(S)
-    KSIJ = np.concatenate((K,S), axis=1)
+    KSIJ = np.concatenate((K,SIJ), axis=1)
     # print(KSIJ)
+    a_values = np.array([[a0], [a1]])
 
     # convert K, S, I, J to csv
     data = pd.DataFrame(KSIJ, columns=['K', 'S', 'I', 'J'])
     data.to_csv('KSIJ_arrays.csv', index=False)
+    values = pd.DataFrame(a_values, columns=['a'])
+    values.to_csv('a_values.csv', index=False)
 
-    return a0, a1
+    return
 
-
+def lessElements(S, val):
+    count = 0
+    for i in range(len(S)):
+        if S[i] >= val:
+            break
+        count += 1
+    return count
+    
 def hours2rad(hr, min, sec):
     """
     Converts right ascension hours, minutes, seconds to radians

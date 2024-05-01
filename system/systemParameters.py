@@ -33,12 +33,15 @@ minArea = 5 # minimum pixel area to consider as star
 maxArea = 25 # maximum pixel area to consider as star
 
 # attitude ---------------------------------------------------------------------
-ra0 = np.deg2rad(195) # big dipper
-dec0 = np.deg2rad(55)
-roll0 = np.deg2rad(-30)
-ra0 = np.deg2rad(np.random.random_sample() * 360)
-dec0 = np.deg2rad(180 * np.random.random_sample() - 90)
-roll0 = np.deg2rad(np.random.random_sample() * 360)
-# ra0 = 0
-# dec0 = 0
-# roll0 = 0
+# ra0 = np.deg2rad(195) # big dipper
+# dec0 = np.deg2rad(55)
+# roll0 = np.deg2rad(-30)
+# ra0 = np.deg2rad(np.random.random_sample() * 360)
+# dec0 = np.deg2rad(180 * np.random.random_sample() - 90)
+# roll0 = np.deg2rad(np.random.random_sample() * 360)
+# ra0 = np.deg2rad(82.5) # orion
+# dec0 = np.deg2rad(5)
+# roll0 = np.deg2rad(0)
+# ra0 = 0.14093958198937084
+# dec0 = 0.09729562525207872
+# roll0 = 0.43063944318133446
