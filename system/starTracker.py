@@ -123,7 +123,7 @@ def stOperation(img, minArea, maxArea, h, w, f):
 
         # repeat for i-j pairs
         Mij = databaseQuery(si, sj, unitVectors, a0, a1)
-        # print("Mij = " + str(Mij))
+       #  print("Mij = " + str(Mij))
 
         # iterate through pairs in Mij 
         num_ij = len(Mij) # number of pairs in ij 
@@ -156,11 +156,12 @@ def stOperation(img, minArea, maxArea, h, w, f):
             cj = cj_match
             ck = ck_match
             cr = cr_match
-            # if distanceCheck(si, sj, sk, sr, ci, cj, ck, cr, unitVectors, a0, a1):
-            #     break
+            # print("checking distances")
+            if distanceCheck(si, sj, sk, sr, ci, cj, ck, cr, unitVectors, a0, a1):
+                break
             # check distances here, if they agree then break, if not then check new star
 
-            break
+            # break
         # print(str(matchesFound) + " matches found with star " + str(centerStar))
 
         # need to actually check that the 6 distances agree 
@@ -243,16 +244,37 @@ def distanceCheck(si, sj, sk, sr, ci, cj, ck, cr, unitVectors, a0, a1):
     global_id = [ci, cj, ck, cr]
     error = 0.00078507 # have this value calculated somewhere!!
 
+    # inertial unit vectors for distance check
+    sa = np.empty((4,3))
+    inertialVectors = pd.read_csv("v_unit_vectors.csv")
+    inertialVectors = inertialVectors.to_numpy()
+    sa[0,:] = inertialVectors[int(ci)]
+    sa[1,:] = inertialVectors[int(cj)]
+    sa[2,:] = inertialVectors[int(ck)]
+    sa[3,:] = inertialVectors[int(cr)]
+
+    # body unit vectors for distance check
+    sb = np.empty((4,3))
+    sb[0,:] = unitVectors[int(si)]
+    sb[1,:] = unitVectors[int(sj)]
+    sb[2,:] = unitVectors[int(sk)]
+    sb[3,:] = unitVectors[int(sr)]
+
     for s1 in range(4):
         for s2 in range(s1+1,4):
             if s1 != s2:
                 # for local angles
-                angle = np.arccos(np.dot(unitVectors[local_id[s1]], unitVectors[local_id[s2]]))
-                l_bot = np.cos(angle + error)
-                l_top = np.cos(angle - error)
-                # for true angle - need to read in things from actual unit vectors, or store angle data somewhere 
-                dot = np.dot(c1, c2)
-                if dot < l_bot or dot > l_top:
+                local1 = np.atleast_2d(sb[s1,:]).T
+                local2 = np.atleast_2d(sb[s2,:]).T
+                angle = np.arccos(np.matmul(local1.T, local2))
+                local_bot = np.cos(angle + error)
+                local_top = np.cos(angle - error)
+                # for global angles
+                global1 = np.atleast_2d(sa[s1,:]).T
+                global2 = np.atleast_2d(sa[s2,:]).T
+                dist = np.matmul(global1.T, global2)
+                if dist < local_bot or dist > local_top:
+                    # print("distances disagree")
                     return False
     return True
 

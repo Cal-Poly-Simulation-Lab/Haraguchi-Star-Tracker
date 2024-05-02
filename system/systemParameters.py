@@ -11,6 +11,7 @@ h_cm = 8.7 # 8.988617 # 8.7 # (real) screen height in cm
 l = 13.06 # camera / screen separation in cm - should it be lens / screen?
 f = h / h_cm * l # system focal length in pixels
 
+
 # database locations -----------------------------------------------------------
 catalogFile = "bs5_brief.csv"
 generationDataFile = "star_generation_data.csv"
@@ -42,6 +43,6 @@ maxArea = 25 # maximum pixel area to consider as star
 # ra0 = np.deg2rad(82.5) # orion
 # dec0 = np.deg2rad(5)
 # roll0 = np.deg2rad(0)
-# ra0 = 0.14093958198937084
-# dec0 = 0.09729562525207872
-# roll0 = 0.43063944318133446
+# ra0 = 0.79512476843139
+# dec0 = 0.50379547703881
+# roll0 = 4.792711113902393

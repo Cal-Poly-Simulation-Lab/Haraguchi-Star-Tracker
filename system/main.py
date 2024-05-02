@@ -10,7 +10,7 @@ import truth
 failed = 0
 error = 0
 
-numTrials = 1
+numTrials = 1000
 for i in range(numTrials):
     # attitude ---------------------------------------------------------------------
     ra0 = np.deg2rad(np.random. random_sample() * 360)
