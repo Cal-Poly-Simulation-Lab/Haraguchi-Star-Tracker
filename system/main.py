@@ -5,17 +5,18 @@ import databaseGeneration as dg
 import imageGeneration as ig
 import starTracker as st
 import truth
+from matplotlib import pyplot as plt
 
 # random tests
 failed = 0
 error = 0
 
-numTrials = 1000
+numTrials = 1
 for i in range(numTrials):
     # attitude ---------------------------------------------------------------------
-    ra0 = np.deg2rad(np.random. random_sample() * 360)
-    dec0 = np.deg2rad(180 * np.random.random_sample() - 90)
-    roll0 = np.deg2rad(np.random.random_sample() * 360)
+    # ra0 = np.deg2rad(np.random. random_sample() * 360)
+    # dec0 = np.deg2rad(180 * np.random.random_sample() - 90)
+    # roll0 = np.deg2rad(np.random.random_sample() * 360)
 
     # database generation ----------------------------------------------------------
     if regenerateDatabase:
@@ -26,6 +27,7 @@ for i in range(numTrials):
     # image generation -------------------------------------------------------------
     img = ig.staticImage(generationDataFile, ra0, dec0, roll0, fovx, fovy, f, h, w, 
                         maxStars, starSize, sigma)
+    # cv.imwrite("orion.png", img)
     # cv.imshow("img", img)
     # cv.waitKey()
     # print(ra0)

@@ -18,7 +18,7 @@ def stOperation(img, minArea, maxArea, h, w, f):
     # cv.imshow("binary", meanThresh)
     # cv.waitKey()
     # plt.imshow(meanThresh, cmap='gray', vmin=0, vmax=255)
-    plt.imshow(img)
+    fig = plt.imshow(img)
     # plt.show()
 
     # plt.subplot(1,2,1)
@@ -77,7 +77,8 @@ def stOperation(img, minArea, maxArea, h, w, f):
                 # plt.show()
 
     # plt.savefig("local_label.png")
-    # plt.show()
+    plt.axis('off')
+    # plt.savefig("local_label.png")
     # sort center star list by second column 
     centerStarList = centerStarList[centerStarList[:,1].argsort()]
     centerStarList = centerStarList[:,0]

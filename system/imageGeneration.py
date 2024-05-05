@@ -90,12 +90,15 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
     for idx in range(num_stars):
         rai = ra[idx]
         deci = dec[idx]
-        
+
         u_star_ICRF = np.array([[np.cos(deci) * np.cos(rai)],
                                [np.cos(deci) * np.sin(rai)],
                                [np.sin(deci)]])
         # transform to star tracker framt
         u_star_st = np.matmul(Cbi, u_star_ICRF)
+
+        # print("star " + str(index[idx]))
+        # print(u_star_ICRF)
 
         # u_star_st[2,0] = -1 * u_star_st[2,0]]
 
@@ -131,6 +134,7 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
                         img[r_floor-border+i, c_floor-border+j] += inten[i] * H[i,j]
 
     plt.imshow(img)
+    plt.axis('off')
     # plt.savefig("global_label.png")
     # plt.show()
     plt.close()
