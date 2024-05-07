@@ -79,7 +79,16 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
     Cbi = radec2M(ra0, dec0, roll0)
     
     # create image array 
-    img = np.zeros((h,w), np.uint8)
+    img = np.empty((h,w), np.uint8)
+    for r in range(h):
+        for c in range(w):
+            img[r,c] = np.random.randint(5, 16) # what should the background color be, and add noise 
+    # add random spot noise
+    count = np.random.randint(0, 10)
+    for i in range(count):
+        r = np.random.randint(0, h)
+        c = np.random.randint(0, w)
+        img[r,c] = 255
 
     # for star spot centroiding
     border = starSize // 2

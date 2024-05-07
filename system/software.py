@@ -11,12 +11,12 @@ from matplotlib import pyplot as plt
 failed = 0
 error = 0
 
-numTrials = 1
+numTrials = 10
 for i in range(numTrials):
     # attitude ---------------------------------------------------------------------
-    # ra0 = np.deg2rad(np.random. random_sample() * 360)
-    # dec0 = np.deg2rad(180 * np.random.random_sample() - 90)
-    # roll0 = np.deg2rad(np.random.random_sample() * 360)
+    ra0 = np.deg2rad(np.random.random_sample() * 360)
+    dec0 = np.deg2rad(180 * np.random.random_sample() - 90)
+    roll0 = np.deg2rad(np.random.random_sample() * 360)
 
     # database generation ----------------------------------------------------------
     if regenerateDatabase:

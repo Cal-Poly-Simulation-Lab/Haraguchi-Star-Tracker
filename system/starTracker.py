@@ -8,8 +8,9 @@ def stOperation(img, minArea, maxArea, h, w, f):
     covers all aspects of star tracker operaiton
     """
     meanIntensity = np.mean(img) # calculate pixel intensity mean for the whole image
+    stddevIntensity = np.std(img)
 
-    ret,meanThresh = cv.threshold(img, meanIntensity, 255, cv.THRESH_BINARY) # threshold using that value
+    ret,meanThresh = cv.threshold(img, meanIntensity + 2 * stddevIntensity, 255, cv.THRESH_BINARY) # threshold using that value
     analysis = cv.connectedComponentsWithStats(meanThresh, 4, cv.CV_16U) # or 32 bit signed, also decide 4 or 8 connectivity
     (numLabels, labeledImg, stats, geomCentroids) = analysis
 
