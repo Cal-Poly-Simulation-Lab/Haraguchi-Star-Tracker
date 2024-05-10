@@ -31,7 +31,8 @@ def stOperation(img, minArea, maxArea, h, w, f):
     numCandidates = 0
     centerStar = 0
     minDist = np.sqrt((h/2)**2 + (w/2)**2)
-    centerStarList = np.zeros((numLabels-1, 2))
+    print(numLabels)
+    centerStarList = [] # np.zeros((numLabels-1, 2))
     for i in range(numLabels):
         area = stats[i, cv.CC_STAT_AREA]
         if area >= minArea and area <= maxArea: # area falls within expected range
@@ -62,8 +63,9 @@ def stOperation(img, minArea, maxArea, h, w, f):
                 if dist < minDist:
                     minDist = dist
                     centerStar = numCandidates
-                centerStarList[numCandidates,0] = numCandidates
-                centerStarList[numCandidates,1] = dist
+                centerStarList.append([numCandidates, dist])
+                # centerStarList[numCandidates,0] = numCandidates
+                # centerStarList[numCandidates,1] = dist
 
 
                 s = getUnitVector(X, Y, f)
@@ -81,8 +83,11 @@ def stOperation(img, minArea, maxArea, h, w, f):
     plt.axis('off')
     # plt.savefig("local_label.png")
     # sort center star list by second column 
+    print(centerStarList)
+    centerStarList = np.asarray(centerStarList)
     centerStarList = centerStarList[centerStarList[:,1].argsort()]
     centerStarList = centerStarList[:,0]
+    print(centerStarList)
 
     # convert lists to numpy arrays
     centroids = np.array(centroids)
@@ -101,7 +106,7 @@ def stOperation(img, minArea, maxArea, h, w, f):
         matchesFound = 0
 
         centerStar = int(centerStarList[i])
-        # print("trying star " + str(centerStar))
+        print("trying star " + str(centerStar))
 
         # find three other stars closest to center star
         # define center star as s_i

@@ -103,6 +103,8 @@ def staticImage(dataPath, ra0, dec0, roll0, fovx, fovy, f, h, w, maxStars, starS
         u_star_ICRF = np.array([[np.cos(deci) * np.cos(rai)],
                                [np.cos(deci) * np.sin(rai)],
                                [np.sin(deci)]])
+        # print("star " + str(index[idx]))
+        # print("with inertial unit vector " + str(u_star_ICRF))
         # transform to star tracker framt
         u_star_st = np.matmul(Cbi, u_star_ICRF)
 
