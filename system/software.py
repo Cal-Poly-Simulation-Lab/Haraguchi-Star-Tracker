@@ -7,6 +7,7 @@ import starTracker as st
 import truth
 from matplotlib import pyplot as plt
 
+
 # random tests
 failed = 0
 error = 0
