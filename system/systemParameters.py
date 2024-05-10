@@ -8,7 +8,7 @@ fovy = np.deg2rad(41) # vertical fov in rads
 h = 600 # screen height in pixels
 w = 1024 # screen width in pixels 
 h_cm = 8.7 # 8.988617 # 8.7 # (real) screen height in cm
-l = 13.06 # camera / screen separation in cm - should it be lens / screen?
+l = 13.47 # camera / screen separation in cm - should it be lens / screen?
 f = h / h_cm * l # system focal length in pixels
 
 
