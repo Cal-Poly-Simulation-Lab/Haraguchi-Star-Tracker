@@ -264,11 +264,11 @@ def stOperationHardware(img, minArea, maxArea, f):
         sr = neighbors[2]
 
         # # make hash table for i-k pairs 
-        Mik = databaseQuery(si, sk, unitVectors, a0, a1)
+        Mik = databaseQuery(si, sk, unitVectors, a0, a1, f)
         # make hash table for i-r pairs
-        Mir = databaseQuery(si, sr, unitVectors, a0, a1)
+        Mir = databaseQuery(si, sr, unitVectors, a0, a1, f)
         # repeat for i-j pairs
-        Mij = databaseQuery(si, sj, unitVectors, a0, a1)
+        Mij = databaseQuery(si, sj, unitVectors, a0, a1, f)
 
         # iterate through pairs in Mij 
         num_ij = len(Mij) # number of pairs in ij 
